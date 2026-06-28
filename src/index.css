@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #f8fafc;
+  --color-surface-dim: #cbd5e1;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f1f5f9;
+  --color-surface-container: #e2e8f0;
+  --color-surface-container-high: #cbd5e1;
+  --color-surface-container-highest: #94a3b8;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  --color-inverse-surface: #0f172a;
+  --color-inverse-on-surface: #f8fafc;
+  --color-outline: #64748b;
+  --color-outline-variant: #cbd5e1;
+  --color-surface-tint: #475569;
+  --color-primary: #1e3a8a;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #1e3a8a;
+  --color-on-primary-container: #dbeafe;
+  --color-inverse-primary: #93c5fd;
+  --color-secondary: #2563eb;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #dbeafe;
+  --color-on-secondary-container: #1e40af;
+  --color-accent: #fbbf24;
+  --color-accent-dark: #d97706;
+  --color-emerald: #10b981;
+  --color-emerald-light: #ecfdf5;
+  --color-emerald-dark: #047857;
+  --color-tertiary: #0f172a;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #1e293b;
+  --color-on-tertiary-container: #cbd5e1;
+  --color-error: #ef4444;
+  --color-on-error: #ffffff;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #991b1b;
+  --color-background: #f8fafc;
+  --color-on-background: #0f172a;
+  --color-surface-variant: #f1f5f9;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", sans-serif;
+}
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F5F7FA;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
