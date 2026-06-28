@@ -4,7 +4,8 @@ import { INITIAL_ITEMS, CHENNAI_HUBS } from './components/MockData';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { FinderFlow } from './components/FinderFlow';
 import { SearchDashboard } from './components/SearchDashboard';
-import { AdminHub } from './components/AdminHub';
+import { AdminDashboard } from './components/AdminDashboard';
+import { NotificationController } from './components/NotificationController';
 import {
   Info,
   Sliders,
@@ -484,6 +485,9 @@ export default function App() {
                     {/* Left & Center Main Workspace: Maps, Cards, Handover Info */}
                     <div className="lg:col-span-2 space-y-6">
                       
+                      {/* Real-time Notification Controller */}
+                      <NotificationController currentUser={user} items={items} />
+                      
                       {/* Interactive Found CTA card */}
                       <div className="bg-gradient-to-r from-blue-900 to-blue-950 text-white p-6 rounded-2xl border-l-8 border-amber-400 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="space-y-2 text-left">
@@ -684,7 +688,7 @@ export default function App() {
 
               {currentScreen === 'admin' && (
                 <div className="max-w-5xl mx-auto space-y-6">
-                  <AdminHub
+                  <AdminDashboard
                     items={items}
                     onApproveProof={handleApproveProof}
                     onRejectProof={handleRejectProof}
@@ -798,6 +802,9 @@ export default function App() {
                     <p className="text-xs font-black text-amber-400 font-mono">₹{user.balance}</p>
                   </div>
                 </div>
+
+                {/* Real-time Notification Controller */}
+                <NotificationController currentUser={user} items={items} />
 
                 {/* Found something CTA Card */}
                 <div className="bg-blue-900 text-white p-4.5 rounded-2xl border-l-4 border-amber-400 shadow-md">
@@ -948,7 +955,7 @@ export default function App() {
             )}
 
             {currentScreen === 'admin' && (
-              <AdminHub
+              <AdminDashboard
                 items={items}
                 onApproveProof={handleApproveProof}
                 onRejectProof={handleRejectProof}
