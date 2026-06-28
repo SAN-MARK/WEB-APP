@@ -24,6 +24,7 @@ export interface LiveFoundItem {
   StorageHub?: string;
   Status?: string;
   ImageReference?: string;
+  OwnerProof?: string;
 }
 
 export const apiRouter = {

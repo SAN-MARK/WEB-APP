@@ -168,6 +168,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Cross-reference local found items to see if there is any custom owner claims/proofs submitted
   const getOwnerProofForLiveItem = (liveItem: LiveFoundItem) => {
+    if (liveItem.OwnerProof) {
+      return {
+        fullName: 'Citizen Claimant',
+        mobileNumber: liveItem.FinderPhone || 'N/A',
+        proofDetail: liveItem.OwnerProof,
+        submittedAt: 'Just now',
+        status: 'pending' as const
+      };
+    }
     // Attempt to match by item description or category & location
     const matchedLocal = items.find(local => 
       local.category.toLowerCase() === (liveItem.ItemCategory || '').toLowerCase() ||

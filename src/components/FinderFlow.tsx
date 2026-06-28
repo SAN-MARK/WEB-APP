@@ -221,8 +221,12 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
         LossLocation: location,
         FoundDate: foundDate,
         StorageHub: assignedHub.name,
-        Status: 'Found',
-        ImageReference: mockPhotoName || 'camera_capture_landmark.jpg'
+        Status: 'Available', // Default to "Available" as requested
+        ImageReference: mockPhotoName || 'camera_capture_landmark.jpg',
+        "Item Name": `${category} found at ${location.split(',')[0]}`,
+        "Location": assignedHub.name,
+        "Description": description,
+        "Date Found": foundDate
       });
 
       setIsLoading(false);

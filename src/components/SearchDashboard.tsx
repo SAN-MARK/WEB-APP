@@ -215,6 +215,9 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
     if (claimingItem) {
       setIsLoading(true);
       try {
+        // Send a PATCH request to the API updating that item's status to "Under Review" and saving the owner's proof data into a new 'OwnerProof' column in the same row
+        await dbService.claimItemWithProofBySubmissionId(claimingItem.submissionId, proofDetail);
+
         await dbService.recordFileSubmission({
           Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
           Type: 'Owner',
@@ -363,7 +366,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
                         ? 'bg-amber-100 text-amber-800 border-amber-200'
                         : 'bg-blue-100 text-blue-800 border-blue-200'
                     }`}>
-                      {item.status}
+                      {item.status === 'Under verification' || item.status === 'Awaiting Approval' ? 'Pending Verification' : item.status}
                     </span>
                   </div>
                 </div>
@@ -393,10 +396,10 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
                     </button>
                   ) : item.status === 'Under verification' || item.status === 'Awaiting Approval' ? (
                     <button
-                      onClick={() => handleStartClaim(item)}
-                      className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-xs uppercase tracking-widest rounded shadow-md active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1"
+                      disabled
+                      className="w-full py-2.5 bg-slate-100 text-slate-400 border border-slate-200 font-bold text-xs uppercase tracking-widest rounded flex items-center justify-center gap-1 cursor-not-allowed"
                     >
-                      View Active Claim Status
+                      Pending Verification
                     </button>
                   ) : (
                     <div className="p-2 bg-emerald-50 rounded border border-emerald-200 text-center">

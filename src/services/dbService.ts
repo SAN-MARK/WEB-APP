@@ -35,6 +35,10 @@ export interface FoundItemSubmissionPayload {
   StorageHub: string;
   Status: string;
   ImageReference: string;
+  "Item Name"?: string;
+  "Location"?: string;
+  "Description"?: string;
+  "Date Found"?: string;
 }
 
 export interface IdentityVerificationPayload {
@@ -243,6 +247,44 @@ export const dbService = {
       return response.ok;
     } catch (error) {
       console.error('Failed to update identity status:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Searches for a found item by submissionId and updates its status to 'Under Review' and OwnerProof with owner proof details
+   */
+  async claimItemWithProofBySubmissionId(submissionId: string, proofDetail: string): Promise<boolean> {
+    try {
+      console.log(`Searching for item to claim with submissionId: ${submissionId}`);
+      const items = await dbService.fetchFoundItems();
+      const rowIndex = items.findIndex((item: any) => 
+        (item.submissionId && String(item.submissionId).trim() === String(submissionId).trim()) ||
+        (item['SubmissionId'] && String(item['SubmissionId']).trim() === String(submissionId).trim()) ||
+        (item['submissionId'] && String(item['submissionId']).trim() === String(submissionId).trim()) ||
+        (item['Item Name'] && String(item['Item Name']).includes(String(submissionId))) ||
+        (item['Description'] && String(item['Description']).includes(String(submissionId)))
+      );
+
+      if (rowIndex !== -1) {
+        console.log(`Found item at row index ${rowIndex}. Updating status and OwnerProof...`);
+        const response = await fetch(`${FOUND_ITEMS_URL}/${rowIndex}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            Status: 'Under Review',
+            OwnerProof: proofDetail
+          }),
+        });
+        return response.ok;
+      } else {
+        console.warn(`No item found in spreadsheet matching submissionId: ${submissionId}`);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to claim item with proof:', error);
       return false;
     }
   }

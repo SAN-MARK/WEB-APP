@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FoundItem, UserProfile } from './types';
+import { FoundItem, UserProfile, ItemCategory, ItemStatus } from './types';
 import { INITIAL_ITEMS, CHENNAI_HUBS } from './components/MockData';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { FinderFlow } from './components/FinderFlow';
@@ -7,6 +7,7 @@ import { SearchDashboard } from './components/SearchDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { NotificationController } from './components/NotificationController';
 import { HomeDashboard } from './components/HomeDashboard';
+import { apiRouter } from './services/apiRouter';
 import {
   Info,
   Sliders,
@@ -44,12 +45,99 @@ function AvatarImage({ user, className }: { user: UserProfile; className: string
   );
 }
 
+function mapRowToFoundItem(row: any, index: number): FoundItem {
+  const category = (row.ItemCategory || 'Other') as ItemCategory;
+  const name = row['Item Name'] || row.ItemName || (row.ItemCategory ? `${row.ItemCategory} found` : 'Found Item');
+  const location = row.Location || row.LossLocation || row.StorageHub || 'Chennai';
+  const description = row.Description || row.ItemDescription || '';
+  const date = row['Date Found'] || row.FoundDate || 'Today';
+  const statusRaw = row.Status || 'Available';
+  
+  let status: ItemStatus = 'Found';
+  if (statusRaw === 'Under Review' || statusRaw === 'Under verification' || statusRaw === 'pending') {
+    status = 'Under verification';
+  } else if (statusRaw === 'Awaiting Approval') {
+    status = 'Awaiting Approval';
+  } else if (statusRaw === 'Claimed') {
+    status = 'Claimed';
+  } else if (statusRaw === 'Dropped at Hub') {
+    status = 'Dropped at Hub';
+  }
+
+  const PRESET_BLUR_PHOTOS: Record<ItemCategory, string> = {
+    Phone: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEpAJ-lhGR1WUgvwPr9auHDvcd1LyF6YwaDZnU8IjVl6MWqR0RaYRqEh11ZbEqcK61EtM9D2fYNdFMCbh2dCCVYCNRe82fxfIymhLSX-q1DWtrktuakxUWxHJUcvJMQo1DlOx-hxgAUHynMU5GxmRnVWWtsIbVYJDwzS8cPAmQH2NZSQyyLQ_jQoAf8MqojgALDFriP-7bYxcIXGRoOiu8bzAbUwKgGQ2c3IppvM3iTTK_ghch0yojVd9ikBeB2MEuPo6JeCbzOOCQ',
+    Wallet: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC0vaabrFIVpkb0hl-Y02m8D2jBnEz6loFtLB2XdkMf22vPKh8MYjP48NHimS377cQlguFvOkCCfKjRuKKx-MHH4BvAwGkRRmhyxUfL3EckE5yM9d3oldCISh9RoRXoKlSWxI0sTvmgZMBn8vVLIfMHZZle5TkoXQdmTypj8pS6zOL8TGohTC-Yl6YKPfrvvrxhEpWhhH8iqxEJngiMieaIUxG5637Wk8U1X65l7fuCfF9vyQK81s1mGKo5x84m8vCJxeVOBHuoBn6V',
+    Keys: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDitxzszzX07L52mpJg5CYLz1BpxRVyD2Cm1u1FuUzSqoqC1AOYf-NEeIg9612Km-KaEBGHn7-Q51sGOZBWUkI20USfUb1VvK-wjz_7PRhLRufvoWsrNfQAR_gFHOEstHy2fQZPXxGLJ7UOMf08kOvGi8-WaDe8zshGM8VAbo7xoUNDZ5JL7Y6NI8fZYYtQNj0TlKBjmJg0nb9brZEmwZYYcsCJ5mAF_x2HUYy_JtZJx5sd745LgbWlkt3PPZvlovTkZ--bbfT04JWn',
+    Documents: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEpAJ-lhGR1WUgvwPr9auHDvcd1LyF6YwaDZnU8IjVl6MWqR0RaYRqEh11ZbEqcK61EtM9D2fYNdFMCbh2dCCVYCNRe82fxfIymhLSX-q1DWtrktuakxUWxHJUcvJMQo1DlOx-hxgAUHynMU5GxmRnVWWtsIbVYJDwzS8cPAmQH2NZSQyyLQ_jQoAf8MqojgALDFriP-7bYxcIXGRoOiu8bzAbUwKgGQ2c3IppvM3iTTK_ghch0yojVd9ikBeB2MEuPo6JeCbzOOCQ',
+    Jewellery: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDitxzszzX07L52mpJg5CYLz1BpxRVyD2Cm1u1FuUzSqoqC1AOYf-NEeIg9612Km-KaEBGHn7-Q51sGOZBWUkI20USfUb1VvK-wjz_7PRhLRufvoWsrNfQAR_gFHOEstHy2fQZPXxGLJ7UOMf08kOvGi8-WaDe8zshGM8VAbo7xoUNDZ5JL7Y6NI8fZYYtQNj0TlKBjmJg0nb9brZEmwZYYcsCJ5mAF_x2HUYy_JtZJx5sd745LgbWlkt3PPZvlovTkZ--bbfT04JWn',
+    Other: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEpAJ-lhGR1WUgvwPr9auHDvcd1LyF6YwaDZnU8IjVl6MWqR0RaYRqEh11ZbEqcK61EtM9D2fYNdFMCbh2dCCVYCNRe82fxfIymhLSX-q1DWtrktuakxUWxHJUcvJMQo1DlOx-hxgAUHynMU5GxmRnVWWtsIbVYJDwzS8cPAmQH2NZSQyyLQ_jQoAf8MqojgALDFriP-7bYxcIXGRoOiu8bzAbUwKgGQ2c3IppvM3iTTK_ghch0yojVd9ikBeB2MEuPo6JeCbzOOCQ',
+    Electronics: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEpAJ-lhGR1WUgvwPr9auHDvcd1LyF6YwaDZnU8IjVl6MWqR0RaYRqEh11ZbEqcK61EtM9D2fYNdFMCbh2dCCVYCNRe82fxfIymhLSX-q1DWtrktuakxUWxHJUcvJMQo1DlOx-hxgAUHynMU5GxmRnVWWtsIbVYJDwzS8cPAmQH2NZSQyyLQ_jQoAf8MqojgALDFriP-7bYxcIXGRoOiu8bzAbUwKgGQ2c3IppvM3iTTK_ghch0yojVd9ikBeB2MEuPo6JeCbzOOCQ'
+  };
+
+  const PRESET_PHOTOS: Record<ItemCategory, string> = {
+    Phone: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&q=80&w=400',
+    Wallet: 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&q=80&w=400',
+    Keys: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=400',
+    Documents: 'https://images.unsplash.com/photo-1544016768-982d1554f0b9?auto=format&fit=crop&q=80&w=400',
+    Jewellery: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=400',
+    Other: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=400',
+    Electronics: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&q=80&w=400'
+  };
+
+  return {
+    id: row.id || `api-${index}`,
+    category,
+    name,
+    location,
+    date,
+    hubId: row.hubId || 'tnagar',
+    status,
+    blurImg: row.blurImg || PRESET_BLUR_PHOTOS[category],
+    clearImg: row.clearImg || PRESET_PHOTOS[category],
+    submissionId: row.submissionId || `FB-SUB-${index}`,
+    description,
+    reporterName: row.FinderName || 'Anonymous Finder',
+    reporterEmail: row.FinderEmail || '',
+    rewardAmount: row.rewardAmount || 60,
+    hasPaidEscrow: row.hasPaidEscrow === 'true' || row.hasPaidEscrow === true || false,
+    serviceFee: row.serviceFee || 200,
+    proof: row.OwnerProof ? {
+      fullName: 'Owner',
+      mobileNumber: '',
+      proofDetail: row.OwnerProof,
+      submittedAt: 'Just now',
+      status: 'pending'
+    } : undefined
+  };
+}
+
 export default function App() {
   // Persistence state
   const [items, setItems] = useState<FoundItem[]>(() => {
     const saved = localStorage.getItem('findback_items');
     return saved ? JSON.parse(saved) : INITIAL_ITEMS;
   });
+
+  // Pull and Sync items from live Sheet.best API
+  useEffect(() => {
+    const syncItems = async () => {
+      try {
+        console.log("Syncing items from live Sheet.best Found Items API...");
+        const liveRows = await apiRouter.fetchFoundItems();
+        if (liveRows && liveRows.length > 0) {
+          const mappedItems = liveRows.map((row, i) => mapRowToFoundItem(row, i));
+          setItems((prev) => {
+            const existingIds = new Set(mappedItems.map(item => item.id));
+            const remainingLocal = prev.filter(item => !existingIds.has(item.id) && !item.id.startsWith('api-') && !item.id.startsWith('reported-'));
+            return [...mappedItems, ...remainingLocal];
+          });
+        }
+      } catch (error) {
+        console.error("Failed to sync items with live Sheet.best API:", error);
+      }
+    };
+    syncItems();
+  }, []);
 
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('findback_user');
