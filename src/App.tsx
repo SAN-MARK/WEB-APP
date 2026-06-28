@@ -7,6 +7,7 @@ import { SearchDashboard } from './components/SearchDashboard';
 import { AdminHub } from './components/AdminHub';
 import { NotificationController } from './components/NotificationController';
 import { HomeDashboard } from './components/HomeDashboard';
+import { AccountSettings } from './components/AccountSettings';
 import { apiRouter } from './services/apiRouter';
 import {
   Info,
@@ -18,14 +19,15 @@ import {
   Search,
   PlusCircle,
   RefreshCw,
-  TrendingUp
+  TrendingUp,
+  UserCircle,
+  Settings
 } from 'lucide-react';
 
 function AvatarImage({ user, className }: { user: UserProfile; className: string }) {
   const [imageError, setImageError] = useState(false);
-  const nameLetter = user.name ? user.name.trim().charAt(0).toUpperCase() : 'U';
   const hasValidAvatar = user.avatarUrl && 
-    (user.avatarUrl.startsWith('http://') || user.avatarUrl.startsWith('https://')) && 
+    (user.avatarUrl.startsWith('http://') || user.avatarUrl.startsWith('https://') || user.avatarUrl.startsWith('data:image/')) && 
     !imageError;
 
   if (hasValidAvatar) {
@@ -40,9 +42,7 @@ function AvatarImage({ user, className }: { user: UserProfile; className: string
   }
 
   return (
-    <div className={`${className} bg-[#0a1128] text-white font-sans font-black rounded-full flex items-center justify-center select-none uppercase tracking-tight`}>
-      {nameLetter}
-    </div>
+    <UserCircle className={`${className} text-slate-400 bg-slate-900 rounded-full p-0.5`} />
   );
 }
 
@@ -252,14 +252,23 @@ export default function App() {
     .reduce((sum, item) => sum + (item.serviceFee || 0), 0);
 
   // Onboarding Login entry callback
-  const handleLogin = (name: string, email: string, phone: string) => {
+  const handleLogin = (name: string, email: string, phone: string, avatarUrl?: string) => {
     setIsAdminLoggedIn(false);
     setUser((prev) => ({
       ...prev,
       name,
       email,
-      phone
+      phone,
+      avatarUrl: avatarUrl || ''
     }));
+  };
+
+  const handleUpdateUser = (updatedUser: Partial<UserProfile>) => {
+    setUser((prev) => {
+      const next = { ...prev, ...updatedUser };
+      localStorage.setItem('findback_user', JSON.stringify(next));
+      return next;
+    });
   };
 
   const handleAdminLogin = (name: string, email: string) => {
@@ -504,6 +513,18 @@ export default function App() {
                     <span>My Rewards</span>
                   </button>
 
+                  <button
+                    onClick={() => setCurrentScreen('settings')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                      currentScreen === 'settings'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Settings className={`w-4 h-4 ${currentScreen === 'settings' ? 'text-white' : 'text-slate-400'}`} />
+                    <span>Account Settings</span>
+                  </button>
+
                   {isAdminLoggedIn && activeRole === 'admin' && (
                     <button
                       onClick={() => setCurrentScreen('admin')}
@@ -746,6 +767,16 @@ export default function App() {
                 </div>
               )}
 
+              {currentScreen === 'settings' && (
+                <div className="max-w-4xl mx-auto">
+                  <AccountSettings
+                    user={user}
+                    onUpdateUser={handleUpdateUser}
+                    showBanner={showBanner}
+                  />
+                </div>
+              )}
+
             </div>
           </main>
 
@@ -938,6 +969,14 @@ export default function App() {
               />
             )}
 
+            {currentScreen === 'settings' && (
+              <AccountSettings
+                user={user}
+                onUpdateUser={handleUpdateUser}
+                showBanner={showBanner}
+              />
+            )}
+
           </main>
 
           {/* Sticky Footer */}
@@ -998,6 +1037,18 @@ export default function App() {
               >
                 <Star className={`w-4.5 h-4.5 ${currentScreen === 'rewards' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
                 <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Rewards</span>
+              </button>
+
+              <button
+                onClick={() => setCurrentScreen('settings')}
+                className={`flex flex-col items-center justify-center p-1.5 px-3 transition-all text-center rounded cursor-pointer ${
+                  currentScreen === 'settings'
+                    ? 'text-blue-900 font-bold border-b-2 border-blue-900'
+                    : 'text-slate-500 hover:text-blue-900'
+                }`}
+              >
+                <Settings className={`w-4.5 h-4.5 ${currentScreen === 'settings' ? 'text-blue-900' : 'text-slate-500'}`} />
+                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Settings</span>
               </button>
             </nav>
           )}

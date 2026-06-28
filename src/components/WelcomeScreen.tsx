@@ -7,7 +7,7 @@ import { doc, setDoc } from 'firebase/firestore';
 
 interface WelcomeScreenProps {
   onStartFlow: (role: 'finder' | 'owner') => void;
-  onLogin: (name: string, email: string, phone: string) => void;
+  onLogin: (name: string, email: string, phone: string, avatarUrl?: string) => void;
   onAdminLogin?: (name: string, email: string) => void;
 }
 
@@ -19,6 +19,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
   const [selectedRole, setSelectedRole] = useState<'finder' | 'owner' | null>(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   
   // Admin login states
   const [showAdminStepUp, setShowAdminStepUp] = useState(false);
@@ -390,9 +391,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
 
       const userName = matchedUser.Name || matchedUser.name || 'Chennai Citizen';
       const userPhone = matchedUser.Phone || matchedUser.phone || matchedUser.Mobile || matchedUser.mobile || '+91 99999 99999';
+      const userAvatar = matchedUser.ProfilePicURL || matchedUser.avatarUrl || '';
 
       setName(userName);
       setPhone(userPhone);
+      setAvatarUrl(userAvatar);
 
       // Store Name and Email securely in localStorage so the app remembers login state
       const loggedInUser = {
@@ -401,7 +404,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
         phone: userPhone,
         balance: matchedUser.balance || 120,
         reportedCount: matchedUser.reportedCount || 0,
-        claimedCount: matchedUser.claimedCount || 0
+        claimedCount: matchedUser.claimedCount || 0,
+        avatarUrl: userAvatar
       };
       localStorage.setItem('findback_user', JSON.stringify(loggedInUser));
 
@@ -415,7 +419,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
 
   const handleModalConfirm = () => {
     setShowSuccessModal(false);
-    onLogin(name || 'Chennai Citizen', email || 'chennai.citizen@gmail.com', phone || '+91 99999 99999');
+    onLogin(name || 'Chennai Citizen', email || 'chennai.citizen@gmail.com', phone || '+91 99999 99999', avatarUrl);
     onStartFlow(selectedRole || 'owner');
   };
 
