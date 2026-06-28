@@ -4,7 +4,7 @@ import { INITIAL_ITEMS, CHENNAI_HUBS } from './components/MockData';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { FinderFlow } from './components/FinderFlow';
 import { SearchDashboard } from './components/SearchDashboard';
-import { AdminDashboard } from './components/AdminDashboard';
+import { AdminHub } from './components/AdminHub';
 import { NotificationController } from './components/NotificationController';
 import { HomeDashboard } from './components/HomeDashboard';
 import { apiRouter } from './services/apiRouter';
@@ -533,7 +533,7 @@ export default function App() {
                   {currentScreen === 'search' && 'Interactive Recovery Ledger'}
                   {currentScreen === 'report' && 'Submit Lost Item Drop-off'}
                   {currentScreen === 'rewards' && 'Civic Rewards Ledger'}
-                  {currentScreen === 'admin' && 'Central Hub Operator Controls'}
+                  {currentScreen === 'admin' && 'Hub Operator Console'}
                 </h1>
                 <span className="text-[10px] bg-blue-100 text-blue-800 border border-blue-200 font-black tracking-wider uppercase px-2 py-0.5 rounded-md">
                   Perspective: {activeRole}
@@ -663,7 +663,7 @@ export default function App() {
 
               {currentScreen === 'admin' && (
                 <div className="max-w-5xl mx-auto space-y-6">
-                  <AdminDashboard
+                  <AdminHub
                     items={items}
                     onApproveProof={handleApproveProof}
                     onRejectProof={handleRejectProof}
@@ -837,7 +837,7 @@ export default function App() {
             )}
 
             {currentScreen === 'admin' && (
-              <AdminDashboard
+              <AdminHub
                 items={items}
                 onApproveProof={handleApproveProof}
                 onRejectProof={handleRejectProof}
