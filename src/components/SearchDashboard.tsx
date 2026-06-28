@@ -29,6 +29,8 @@ interface SearchDashboardProps {
   onSimulatePayment: (itemId: string) => void;
   currentUser?: UserProfile;
   onlyShowMap?: boolean;
+  autoClaimItemId?: string | null;
+  onClearAutoClaim?: () => void;
 }
 
 export const SearchDashboard: React.FC<SearchDashboardProps> = ({
@@ -37,7 +39,9 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
   onSimulateApproveClaim,
   onSimulatePayment,
   currentUser,
-  onlyShowMap
+  onlyShowMap,
+  autoClaimItemId,
+  onClearAutoClaim
 }) => {
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,6 +76,18 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
       }
     }
   }, [currentUser]);
+
+  React.useEffect(() => {
+    if (autoClaimItemId) {
+      const matched = items.find(i => i.id === autoClaimItemId);
+      if (matched) {
+        handleStartClaim(matched);
+      }
+      if (onClearAutoClaim) {
+        onClearAutoClaim();
+      }
+    }
+  }, [autoClaimItemId, items, onClearAutoClaim]);
 
   const [isDraggingAadhaar, setIsDraggingAadhaar] = useState(false);
   const [isDraggingProof, setIsDraggingProof] = useState(false);
@@ -373,17 +389,33 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
                 {/* Details Section */}
                 <div className="p-4 space-y-3.5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-display font-black text-sm text-slate-800 uppercase tracking-wide leading-tight">{item.name}</h3>
-                      <div className="flex items-center gap-1 text-slate-500 text-xs mt-1 font-medium">
-                        <MapPin className="w-3.5 h-3.5 text-blue-900" />
-                        <span>{item.location}</span>
+                  <div className="flex gap-4 items-stretch justify-between">
+                    {/* Left details column */}
+                    <div className="flex-1 space-y-2">
+                      <div>
+                        <h3 className="font-display font-black text-sm text-slate-800 uppercase tracking-wide leading-tight">{item.name}</h3>
+                        <div className="flex items-center gap-1 text-slate-500 text-xs mt-1 font-medium">
+                          <MapPin className="w-3.5 h-3.5 text-blue-900" />
+                          <span>{item.location}</span>
+                        </div>
                       </div>
+                      <span className="inline-block text-[9px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-mono">
+                        {item.date}
+                      </span>
                     </div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded border border-slate-200 shrink-0 font-mono">
-                      {item.date}
-                    </span>
+
+                    {/* Right Item QR column */}
+                    <div className="flex flex-col items-center justify-center shrink-0 border-l border-slate-100 pl-4 w-24 text-center">
+                      <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 mb-1">Item QR</span>
+                      <div className="p-1 bg-white border border-slate-200 rounded">
+                        <img
+                          src={`https://quickchart.io/qr?text=https://findback-app-url.com/item/${encodeURIComponent(item.id)}&size=200`}
+                          alt="Item QR"
+                          className="w-14 h-14 object-contain"
+                        />
+                      </div>
+                      <span className="text-[7px] text-slate-400 font-mono mt-1 select-all">{item.id}</span>
+                    </div>
                   </div>
 
                   {/* Looks like mine actions */}

@@ -590,18 +590,33 @@ export const AdminHub: React.FC<AdminHubProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[10px] uppercase font-bold tracking-wider bg-slate-950 p-2.5 rounded-lg border border-slate-800/50">
-                    <div>
-                      <span className="text-slate-500 block">Loss Location:</span>
-                      <span className="text-white">{item.LossLocation || 'Chennai City'}</span>
+                  <div className="flex gap-3 items-stretch">
+                    <div className="flex-1 grid grid-cols-2 gap-2 text-[10px] uppercase font-bold tracking-wider bg-slate-950 p-2.5 rounded-lg border border-slate-800/50">
+                      <div>
+                        <span className="text-slate-500 block">Loss Location:</span>
+                        <span className="text-white">{item.LossLocation || 'Chennai City'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Storage Hub:</span>
+                        <span className="text-white">{item.StorageHub || 'Central Hub'}</span>
+                      </div>
+                      <div className="pt-1.5 border-t border-slate-900 col-span-2">
+                        <span className="text-slate-500 block">Finder details:</span>
+                        <span className="text-slate-300 font-medium">{item.FinderName} • {item.FinderPhone}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-500 block">Storage Hub:</span>
-                      <span className="text-white">{item.StorageHub || 'Central Hub'}</span>
-                    </div>
-                    <div className="pt-1.5 border-t border-slate-900 col-span-2">
-                      <span className="text-slate-500 block">Finder details:</span>
-                      <span className="text-slate-300 font-medium">{item.FinderName} • {item.FinderPhone}</span>
+
+                    {/* Item QR Column */}
+                    <div className="flex flex-col items-center justify-center bg-slate-950 border border-slate-800/50 p-2 rounded-lg shrink-0 w-24 text-center">
+                      <span className="text-[8px] font-bold uppercase tracking-widest text-slate-500 mb-1">Item QR</span>
+                      <div className="p-1 bg-white rounded">
+                        <img
+                          src={`https://quickchart.io/qr?text=https://findback-app-url.com/item/${encodeURIComponent(item.id || item.submissionId || `api-${index}`)}&size=200`}
+                          alt="Item QR"
+                          className="w-14 h-14 object-contain"
+                        />
+                      </div>
+                      <span className="text-[7px] text-slate-400 font-mono mt-1 select-all">{item.id || item.submissionId || `api-${index}`}</span>
                     </div>
                   </div>
 

@@ -166,6 +166,63 @@ export default function App() {
     return saved === 'true';
   });
 
+  const [autoClaimItemId, setAutoClaimItemId] = useState<string | null>(null);
+
+  // Show dynamic banner notifications
+  const showBanner = (msg: string) => {
+    setNotificationMsg(msg);
+    setTimeout(() => {
+      setNotificationMsg(null);
+    }, 5000);
+  };
+
+  // Deep-linking URL Parser hook
+  useEffect(() => {
+    const path = window.location.pathname;
+    const search = window.location.search;
+    const hash = window.location.hash;
+    
+    let matchedId = '';
+    
+    // 1. Path match: /item/[ITEM_ID]
+    const pathMatch = path.match(/\/item\/([^/]+)/);
+    if (pathMatch) {
+      matchedId = pathMatch[1];
+    }
+    
+    // 2. Hash match: #/item/[ITEM_ID]
+    if (!matchedId) {
+      const hashMatch = hash.match(/#\/item\/([^/]+)/);
+      if (hashMatch) {
+        matchedId = hashMatch[1];
+      }
+    }
+    
+    // 3. Query string match: ?item=[ITEM_ID] or ?itemId=[ITEM_ID]
+    if (!matchedId) {
+      const urlParams = new URLSearchParams(search);
+      matchedId = urlParams.get('item') || urlParams.get('itemId') || '';
+    }
+    
+    if (matchedId) {
+      const foundItem = items.find(i => i.id === matchedId || i.submissionId === matchedId);
+      if (foundItem) {
+        // Switch screens and auto-start claim wizard
+        setCurrentScreen('search');
+        setActiveRole('owner');
+        setAutoClaimItemId(foundItem.id);
+        showBanner(`✓ Deep-linked to item ${foundItem.name}! Opening verification flow...`);
+        
+        try {
+          // Clear deep-link path safely in browser address bar without reload
+          window.history.replaceState({}, document.title, window.location.origin);
+        } catch (e) {
+          console.error('History replacement state error:', e);
+        }
+      }
+    }
+  }, [items]);
+
   const isProd = typeof import.meta !== 'undefined' && (import.meta as any).env ? !!(import.meta as any).env.PROD : false;
 
   useEffect(() => {
@@ -193,14 +250,6 @@ export default function App() {
   const pendingServiceFeeTotal = items
     .filter(item => (item.reporterEmail || '').trim().toLowerCase() === user.email.trim().toLowerCase() && item.status !== 'Claimed')
     .reduce((sum, item) => sum + (item.serviceFee || 0), 0);
-
-  // Show dynamic banner notifications
-  const showBanner = (msg: string) => {
-    setNotificationMsg(msg);
-    setTimeout(() => {
-      setNotificationMsg(null);
-    }, 5000);
-  };
 
   // Onboarding Login entry callback
   const handleLogin = (name: string, email: string, phone: string) => {
@@ -595,6 +644,8 @@ export default function App() {
                     onSimulateApproveClaim={handleApproveProof}
                     onSimulatePayment={handleSettleUPI}
                     currentUser={user}
+                    autoClaimItemId={autoClaimItemId}
+                    onClearAutoClaim={() => setAutoClaimItemId(null)}
                   />
                 </div>
               )}
@@ -797,6 +848,8 @@ export default function App() {
                 onSimulateApproveClaim={handleApproveProof}
                 onSimulatePayment={handleSettleUPI}
                 currentUser={user}
+                autoClaimItemId={autoClaimItemId}
+                onClearAutoClaim={() => setAutoClaimItemId(null)}
               />
             )}
 
