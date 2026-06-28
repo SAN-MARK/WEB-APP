@@ -171,6 +171,80 @@ export const dbService = {
       console.error('Failed to communicate with live Identity Verification Sheet.best endpoint:', error);
       return false;
     }
+  },
+
+  /**
+   * Fetches all found items from the live sheet
+   */
+  async fetchFoundItems(): Promise<any[]> {
+    try {
+      const response = await fetch(FOUND_ITEMS_URL);
+      if (response.ok) {
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch found items:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Updates the status of a found item by its index in Sheet.best
+   */
+  async updateFoundItemStatus(index: number, status: string): Promise<boolean> {
+    try {
+      console.log(`Updating status of found item at index ${index} to ${status}`);
+      const response = await fetch(`${FOUND_ITEMS_URL}/${index}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ Status: status }),
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Failed to update found item status:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Fetches all identity verifications from the live sheet
+   */
+  async fetchIdentityVerifications(): Promise<any[]> {
+    try {
+      const response = await fetch(IDENTITY_VERIFICATION_URL);
+      if (response.ok) {
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch identity verifications:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Updates verification status of an identity row by index in Sheet.best
+   */
+  async updateIdentityVerificationStatus(index: number, status: string): Promise<boolean> {
+    try {
+      console.log(`Updating verification status of row at index ${index} to ${status}`);
+      const response = await fetch(`${IDENTITY_VERIFICATION_URL}/${index}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ VerificationStatus: status }),
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Failed to update identity status:', error);
+      return false;
+    }
   }
 };
 

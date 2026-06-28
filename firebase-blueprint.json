@@ -1,0 +1,35 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered user profile verified via Phone Auth",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique authenticated user ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full display name"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Verified mobile number with country code"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of profile creation"
+        }
+      },
+      "required": ["uid", "name", "phone", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of verified application users"
+    }
+  }
+}
