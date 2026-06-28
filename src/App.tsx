@@ -6,6 +6,7 @@ import { FinderFlow } from './components/FinderFlow';
 import { SearchDashboard } from './components/SearchDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { NotificationController } from './components/NotificationController';
+import { HomeDashboard } from './components/HomeDashboard';
 import {
   Info,
   Sliders,
@@ -480,133 +481,16 @@ export default function App() {
               )}
 
               {currentScreen === 'home' && (
-                <div className="space-y-8 animate-fade-in">
-                  
-                  {/* SPACIOUS THREE-COLUMN DESKTOP DASHBOARD GRID */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    
-                    {/* Left & Center Main Workspace: Maps, Cards, Handover Info */}
-                    <div className="lg:col-span-2 space-y-6">
-                      
-                      {/* Real-time Notification Controller */}
-                      <NotificationController currentUser={user} items={items} />
-                      
-                      {/* Interactive Found CTA card */}
-                      <div className="bg-gradient-to-r from-blue-900 to-blue-950 text-white p-6 rounded-2xl border-l-8 border-amber-400 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="space-y-2 text-left">
-                          <span className="text-[9px] font-black tracking-widest text-cyan-400 uppercase">Handover Incentive Program</span>
-                          <h3 className="font-display font-black text-xl leading-tight uppercase">
-                            Discovered Lost Passenger Luggage?
-                          </h3>
-                          <p className="text-slate-300 text-xs leading-relaxed max-w-md">
-                            Safely tag and deposit found articles at any local depot. Receive an instant <span className="text-amber-400 font-black">₹60 reward</span> direct to your UPI wallet on claim settlement!
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setActiveRole('finder');
-                            setCurrentScreen('report');
-                          }}
-                          className="px-6 py-3.5 bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-900 font-extrabold uppercase tracking-widest text-xs rounded-xl transition-all shrink-0 cursor-pointer shadow-lg shadow-amber-400/20"
-                        >
-                          Report found item
-                        </button>
-                      </div>
-
-                      {/* Coverage Map Section */}
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h4 className="font-display font-black text-sm text-slate-800 uppercase flex items-center gap-2">
-                            <span className="w-1.5 h-5 bg-blue-600 inline-block"></span>
-                            Nearest Chennai Hub Network
-                          </h4>
-                          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">5 Active drop zones</span>
-                        </div>
-                        
-                        {/* Interactive map centered on Chennai */}
-                        <div className="shadow-md rounded-2xl overflow-hidden border border-slate-200">
-                          <SearchDashboard
-                            items={items}
-                            onClaimSubmitted={handleClaimSubmitted}
-                            onSimulateApproveClaim={handleApproveProof}
-                            onSimulatePayment={handleSettleUPI}
-                            currentUser={user}
-                            onlyShowMap={true}
-                          />
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Right side Dashboard Sidebar panel (Profile status, Recents, Stats) */}
-                    <div className="lg:col-span-1 space-y-6">
-                      
-                      {/* Your Recent Items Ledger */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 text-left">
-                        <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                          <span className="w-1.5 h-4 bg-blue-600"></span>
-                          Activity Tracker
-                        </h4>
-
-                        <div className="space-y-3">
-                          {/* Simulated Recent 1 */}
-                          <div className="bg-slate-50 rounded-xl border border-slate-150 p-3.5 flex items-center justify-between shadow-xs">
-                            <div className="flex gap-3 items-center">
-                              <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
-                                <img src="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Keys" />
-                              </div>
-                              <div>
-                                <h5 className="font-black text-xs text-slate-800 uppercase">Silver Key Set</h5>
-                                <p className="text-[9px] font-mono text-slate-400 mt-0.5">T. Nagar Metro</p>
-                              </div>
-                            </div>
-                            <span className="text-[8px] font-black text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200 uppercase tracking-wider">
-                              Verifying
-                            </span>
-                          </div>
-
-                          {/* Simulated Recent 2 */}
-                          <div className="bg-slate-50 rounded-xl border border-slate-150 p-3.5 flex items-center justify-between shadow-xs">
-                            <div className="flex gap-3 items-center">
-                              <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
-                                <img src="https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Wallet" />
-                              </div>
-                              <div>
-                                <h5 className="font-black text-xs text-slate-800 uppercase">Leather Wallet</h5>
-                                <p className="text-[9px] font-mono text-slate-400 mt-0.5">Adyar Hub</p>
-                              </div>
-                            </div>
-                            <span className="text-[8px] font-black text-green-700 bg-green-50 px-2 py-1 rounded-md border border-green-200 uppercase tracking-wider">
-                              Ready Pickup
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Chennai Recovery Hub quick statistics */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 text-left">
-                        <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                          <span className="w-1.5 h-4 bg-emerald-600"></span>
-                          Chennai Node Stats
-                        </h4>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-150">
-                            <span className="text-[8px] font-black uppercase text-slate-400 block tracking-wider">Reports Logged</span>
-                            <span className="text-lg font-black text-blue-900 font-mono block mt-1">{items.length + 3}</span>
-                          </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-150">
-                            <span className="text-[8px] font-black uppercase text-slate-400 block tracking-wider">Escrow Disbursed</span>
-                            <span className="text-lg font-black text-emerald-600 font-mono block mt-1">₹14,580</span>
-                          </div>
-                        </div>
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
+                <HomeDashboard
+                  user={user}
+                  items={items}
+                  onStartFlow={handleStartFlow}
+                  setActiveRole={setActiveRole}
+                  setCurrentScreen={setCurrentScreen}
+                  handleClaimSubmitted={handleClaimSubmitted}
+                  handleApproveProof={handleApproveProof}
+                  handleSettleUPI={handleSettleUPI}
+                />
               )}
 
               {currentScreen === 'search' && (
@@ -783,109 +667,16 @@ export default function App() {
             )}
 
             {currentScreen === 'home' && (
-              <div className="space-y-5 animate-fade-in text-left">
-                
-                {/* Google user Session banner on mobile */}
-                <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between shadow-md select-none">
-                  <div className="flex items-center gap-2.5">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-cyan-400 flex items-center justify-center">
-                        <AvatarImage user={user} className="w-full h-full text-sm" />
-                      </div>
-                      <div className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-slate-900"></div>
-                    </div>
-                    <div>
-                      <p className="text-[8px] text-cyan-300 font-extrabold uppercase tracking-wider leading-none">Verified Chennai Member</p>
-                      <h4 className="text-xs font-black uppercase text-white tracking-tight mt-0.5 leading-tight">{user.name}</h4>
-                      <p className="text-[8px] text-slate-400 font-mono truncate max-w-[140px] leading-tight">{user.email}</p>
-                    </div>
-                  </div>
-                  <div className="text-right bg-slate-950/60 px-2.5 py-1 rounded-xl border border-slate-800 shrink-0">
-                    <p className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Wallet</p>
-                    <p className="text-xs font-black text-amber-400 font-mono">₹{user.balance}</p>
-                  </div>
-                </div>
-
-                {/* Real-time Notification Controller */}
-                <NotificationController currentUser={user} items={items} />
-
-                {/* Found something CTA Card */}
-                <div className="bg-blue-900 text-white p-4.5 rounded-2xl border-l-4 border-amber-400 shadow-md">
-                  <h3 className="font-display font-black text-sm uppercase flex items-center gap-1.5">
-                    <span className="w-1 h-4 bg-amber-400 inline-block"></span>
-                    Found something?
-                  </h3>
-                  <p className="text-blue-100 text-[11px] leading-relaxed mt-1.5">
-                    Drop it at any Chennai hub. Secure a <span className="text-amber-400 font-extrabold">₹60 reward</span> on successful ledger verification!
-                  </p>
-                  <button
-                    onClick={() => {
-                      setActiveRole('finder');
-                      setCurrentScreen('report');
-                    }}
-                    className="w-full mt-3 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold uppercase tracking-widest text-[10px] rounded-xl transition-all cursor-pointer shadow-lg"
-                  >
-                    Report found item
-                  </button>
-                </div>
-
-                {/* Map Section */}
-                <div className="space-y-2.5">
-                  <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
-                    <span className="w-1 h-3.5 bg-blue-600 inline-block"></span>
-                    Chennai Drop zones
-                  </h4>
-                  
-                  {/* Interactive map widget compact size for mobile screen */}
-                  <div className="shadow-sm rounded-2xl overflow-hidden border border-slate-200">
-                    <SearchDashboard
-                      items={items}
-                      onClaimSubmitted={handleClaimSubmitted}
-                      onSimulateApproveClaim={handleApproveProof}
-                      onSimulatePayment={handleSettleUPI}
-                      currentUser={user}
-                      onlyShowMap={true}
-                    />
-                  </div>
-                </div>
-
-                {/* Recent Items Tracker */}
-                <div className="space-y-2.5">
-                  <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
-                    <span className="w-1 h-3.5 bg-blue-600 inline-block"></span>
-                    Recent Activity
-                  </h4>
-                  <div className="space-y-2">
-                    <div className="bg-white rounded-xl border border-slate-200 p-3 flex items-center justify-between shadow-xs">
-                      <div className="flex gap-3 items-center">
-                        <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
-                          <img src="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Keys" />
-                        </div>
-                        <div>
-                          <h5 className="font-black text-[11px] text-slate-800 uppercase leading-none">Silver Key Set</h5>
-                          <p className="text-[8px] font-mono text-slate-400 mt-1">Under verification</p>
-                        </div>
-                      </div>
-                      <span className="text-[8px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase tracking-wide">
-                        Verifying
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Simulated reset database button */}
-                <div className="p-3.5 bg-slate-100 border border-slate-200 rounded-xl text-center space-y-1.5">
-                  <p className="text-[9px] text-slate-400 leading-tight">
-                    Clean sandbox parameters at any point:
-                  </p>
-                  <button
-                    onClick={handleResetDemo}
-                    className="w-full py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-lg text-[9px] font-bold transition-colors cursor-pointer uppercase tracking-wider"
-                  >
-                    Reset In-Memory Database
-                  </button>
-                </div>
-              </div>
+              <HomeDashboard
+                user={user}
+                items={items}
+                onStartFlow={handleStartFlow}
+                setActiveRole={setActiveRole}
+                setCurrentScreen={setCurrentScreen}
+                handleClaimSubmitted={handleClaimSubmitted}
+                handleApproveProof={handleApproveProof}
+                handleSettleUPI={handleSettleUPI}
+              />
             )}
 
             {currentScreen === 'search' && (
