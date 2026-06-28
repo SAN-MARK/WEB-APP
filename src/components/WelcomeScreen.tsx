@@ -18,6 +18,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<'finder' | 'owner' | null>(null);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Admin login states
   const [showAdminStepUp, setShowAdminStepUp] = useState(false);
@@ -188,6 +189,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
     }
 
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
@@ -210,7 +212,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
       }
 
       // Check for duplicate accounts in Sheet.best before registration
-      const sheetBestUrl = 'https://api.sheetbest.com/sheets/093aba3c-d7b1-421f-95b1-6edf19bb43a3';
+      const sheetBestUrl = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
       try {
         const checkRes = await fetch(sheetBestUrl);
         if (checkRes.ok) {
@@ -250,8 +252,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
           uid: userUid,
           name: regName,
           email: regEmail,
+          password: regPassword,
           phone: verifiedPhone,
           createdAt: new Date(),
+          Name: regName,
+          Email: regEmail,
+          Password: regPassword
         });
         console.log('Profile saved successfully in Firebase Firestore!');
       } catch (dbErr) {
@@ -268,10 +274,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
           },
           body: JSON.stringify([
             {
-              Time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+              Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
               Name: regName,
               Email: regEmail,
-              Mobile: verifiedPhone,
+              Phone: verifiedPhone,
+              Password: regPassword,
             }
           ]),
         });
@@ -298,8 +305,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
       }
 
       setIsLoading(false);
-      onLogin(regName, regEmail, verifiedPhone);
-      onStartFlow('owner');
+      setIsRegistering(false);
+      setRegistrationStep(1);
+      setEmail(regEmail);
+      setPassword('');
+      setError('');
+      setSuccessMessage('Account created successfully! Please log in with your credentials.');
     } catch (err: any) {
       console.error('Error during 2-step verification:', err);
       setError(err.message || 'Verification failed. Please try again.');
@@ -310,16 +321,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
   const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim()) {
-      setError('Please enter your full name first!');
+    if (!email.trim() || !email.includes('@')) {
+      setError('Please enter a valid email address!');
       return;
     }
-    if (!email.trim()) {
-      setError('Please enter your email address!');
-      return;
-    }
-    if (!phone.trim()) {
-      setError('Please enter your phone number!');
+    if (!password.trim()) {
+      setError('Please enter your password!');
       return;
     }
     if (selectedRole === null) {
@@ -328,21 +335,77 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
     }
     
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
-      // POST payload targeting the "Users" tab matching our column headers: { Timestamp, Name, Email, Phone }
-      const success = await dbService.recordUserLogin({
-        Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-        Name: name,
-        Email: email,
-        Phone: phone,
-      });
+      let matchedUser: any = null;
+
+      // 1. Fetch from Firestore users collection
+      try {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const q = query(collection(db, 'users'), where('email', '==', email.trim().toLowerCase()));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          matchedUser = snap.docs[0].data();
+          console.log('User found in Firestore!');
+        }
+      } catch (firestoreErr) {
+        console.warn('Firestore user fetch failed, trying Sheet.best:', firestoreErr);
+      }
+
+      // 2. Fetch from Sheet Best Primary Users Ledger if not found in Firestore
+      if (!matchedUser) {
+        try {
+          const sheetBestUrl = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
+          const res = await fetch(sheetBestUrl);
+          if (res.ok) {
+            const rows = await res.json();
+            if (Array.isArray(rows)) {
+              matchedUser = rows.find(row => 
+                (row.Email || row.email || '').toString().trim().toLowerCase() === email.trim().toLowerCase()
+              );
+              if (matchedUser) {
+                console.log('User found in Sheet.best!');
+              }
+            }
+          }
+        } catch (sheetBestErr) {
+          console.error('Sheet.best user fetch failed:', sheetBestErr);
+        }
+      }
+
+      if (!matchedUser) {
+        setError('Invalid email or password.');
+        setIsLoading(false);
+        return;
+      }
+
+      const storedPassword = matchedUser.Password || matchedUser.password;
+      if (storedPassword !== password) {
+        setError('Invalid email or password.');
+        setIsLoading(false);
+        return;
+      }
+
+      const userName = matchedUser.Name || matchedUser.name || 'Chennai Citizen';
+      const userPhone = matchedUser.Phone || matchedUser.phone || matchedUser.Mobile || matchedUser.mobile || '+91 99999 99999';
+
+      setName(userName);
+      setPhone(userPhone);
+
+      // Store Name and Email securely in localStorage so the app remembers login state
+      const loggedInUser = {
+        name: userName,
+        email: email.trim().toLowerCase(),
+        phone: userPhone,
+        balance: matchedUser.balance || 120,
+        reportedCount: matchedUser.reportedCount || 0,
+        claimedCount: matchedUser.claimedCount || 0
+      };
+      localStorage.setItem('findback_user', JSON.stringify(loggedInUser));
 
       setIsLoading(false);
-      
-      // We always show the beautiful success modal if the request finishes.
-      // If success is false (e.g., sheet.best rate limit or CORS), we still show the user success modal with fallback status, ensuring great UX.
       setShowSuccessModal(true);
     } catch (err) {
       setIsLoading(false);
@@ -727,22 +790,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
           </div>
         )}
 
+        {/* Success Alert */}
+        {successMessage && (
+          <div className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 p-3 rounded-lg text-xs font-bold mb-4 text-center uppercase tracking-wider">
+            {successMessage}
+          </div>
+        )}
+
         {/* Onboarding Credentials Form */}
         <form onSubmit={handleContinue} className="w-full space-y-4">
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1">
-              <User className="w-3.5 h-3.5 text-blue-900" /> Full Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Rahul Sharma"
-              disabled={isLoading}
-              className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 bg-white transition-all disabled:opacity-50"
-            />
-          </div>
-
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1">
               <Mail className="w-3.5 h-3.5 text-blue-900" /> Email Address
@@ -750,22 +806,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setSuccessMessage('');
+              }}
               placeholder="rahul.sharma@gmail.com"
-              disabled={isLoading}
-              className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 bg-white transition-all disabled:opacity-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1">
-              <Phone className="w-3.5 h-3.5 text-blue-900" /> Phone Number
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 98765 43210"
               disabled={isLoading}
               className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 bg-white transition-all disabled:opacity-50"
             />
@@ -781,7 +826,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setSuccessMessage('');
+                }}
                 placeholder="••••••••"
                 disabled={isLoading}
                 className="w-full p-3 pr-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 bg-white transition-all disabled:opacity-50"

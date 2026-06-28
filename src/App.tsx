@@ -65,7 +65,10 @@ export default function App() {
   });
 
   const [activeRole, setActiveRole] = useState<'finder' | 'owner' | 'admin'>('owner');
-  const [currentScreen, setCurrentScreen] = useState<'welcome' | 'home' | 'search' | 'report' | 'rewards' | 'admin'>('welcome');
+  const [currentScreen, setCurrentScreen] = useState<'welcome' | 'home' | 'search' | 'report' | 'rewards' | 'admin'>(() => {
+    const saved = localStorage.getItem('findback_user');
+    return saved ? 'home' : 'welcome';
+  });
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
