@@ -8,7 +8,6 @@ import { AdminHub } from './components/AdminHub';
 import {
   Info,
   Sliders,
-  Menu,
   Bell,
   MapPin,
   Star,
@@ -30,8 +29,8 @@ export default function App() {
     return saved
       ? JSON.parse(saved)
       : {
-          name: 'Rahul Sharma',
-          email: 'rahul.sharma@gmail.com',
+          name: 'Sanjeev Kumar',
+          email: 'iamheresanjeev@gmail.com',
           avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAT1fC-30ox59euXgQKm-BDmqTSUP4em7OCuo2ucolhgUXj8-Qk_GrbXbXWUvh1YIy6SJnrodb_biiQfDUfzx4MrheXBoiONSaH62QImMlFnVeRAVxwojptdqtPy9tPfUDKz0MLXR1bYK08eXCJmIFmhA4FpS8425FH4HEeFty-nuVAj1C-8zfD0IsHmNOKvmoqgIw2TXW95w9wU9gQiV0CzKDav8qVVoS0l6a2L7HLwnhP6xGSvfUT7ixs5BJQD9EEinA49bhz9-n7',
           balance: 120, // pre-loaded reward points
           reportedCount: 2,
@@ -42,6 +41,15 @@ export default function App() {
   const [activeRole, setActiveRole] = useState<'finder' | 'owner' | 'admin'>('owner');
   const [currentScreen, setCurrentScreen] = useState<'welcome' | 'home' | 'search' | 'report' | 'rewards' | 'admin'>('welcome');
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Sync to local storage on changes
   useEffect(() => {
@@ -179,442 +187,779 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-[375px] mx-auto bg-slate-50 min-h-screen relative shadow-2xl overflow-x-hidden flex flex-col border-x border-slate-300">
+    <div className="w-screen h-screen bg-[#090d16] text-slate-800 font-sans overflow-hidden select-none flex items-center justify-center">
       
       {/* Dynamic Toast Notification Banner */}
       {notificationMsg && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[340px] bg-slate-900 text-white p-3.5 rounded shadow-xl z-[999] text-xs font-bold flex items-center gap-2 border-l-4 border-amber-400 animate-fade-in">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[340px] md:w-[400px] bg-slate-900 text-white p-3.5 rounded shadow-2xl z-[999] text-xs font-bold flex items-center gap-2 border-l-4 border-amber-400 animate-fade-in">
           <Info className="text-amber-400 w-5 h-5 shrink-0" />
           <span className="flex-1 leading-tight">{notificationMsg}</span>
         </div>
       )}
 
-      {/* Onboarding Mode Segment Switcher (Always visible in header for easily testing flows) */}
-      <div className="bg-slate-900 text-slate-300 px-3 py-2 flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase border-b-2 border-slate-800 shrink-0">
-        <span className="text-amber-400 flex items-center gap-1">
-          <Sliders className="w-3.5 h-3.5" />
-          Test Roles:
-        </span>
-        <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700">
-          {(['owner', 'finder', 'admin'] as const).map((role) => (
-            <button
-              key={role}
-              onClick={() => {
-                setActiveRole(role);
-                if (currentScreen === 'welcome') {
-                  setCurrentScreen('home');
-                } else if (role === 'admin') {
-                  setCurrentScreen('admin');
-                } else if (role === 'finder') {
-                  setCurrentScreen('report');
-                } else {
-                  setCurrentScreen('home');
-                }
-                showBanner(`Switched to "${role.toUpperCase()}" workflow perspective.`);
-              }}
-              className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold transition-all cursor-pointer ${
-                activeRole === role ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Top App Bar Header Shell */}
-      {currentScreen !== 'welcome' && (
-        <header className="sticky top-0 w-full z-50 bg-blue-900 text-white flex justify-between items-center px-4 py-3 border-b-4 border-amber-400 shrink-0 shadow-md">
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => setCurrentScreen('home')}
-              className="text-white p-1 hover:bg-blue-800 rounded cursor-pointer"
-            >
-              <Menu className="w-5 h-5 font-bold" />
-            </button>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentScreen('home')}>
-              <div className="w-8 h-8 rounded bg-gradient-to-b from-blue-950 to-blue-900 flex items-center justify-center border border-slate-700 relative overflow-hidden shadow-inner">
-                <div className="absolute inset-0.5 rounded-full border border-slate-500/40 flex items-center justify-center">
-                  <RefreshCw className="w-4 h-4 text-cyan-400 filter drop-shadow-[0_0_2px_rgba(34,211,238,0.8)]" />
+      {isDesktop ? (
+        /* ==========================================
+           DESKTOP VIEWPORT / MULTI-COLUMN INTERFACE 
+           ========================================== */
+        <div className="w-full h-full flex overflow-hidden bg-slate-950">
+          
+          {/* Sophisticated Left Sidebar Utility Panel */}
+          <aside className="w-80 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 h-full p-6 text-white select-none">
+            
+            <div className="space-y-6">
+              {/* App Brand Header */}
+              <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setCurrentScreen('home')}>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-blue-950 to-blue-900 flex items-center justify-center border border-slate-700 relative overflow-hidden shadow-inner">
+                  <div className="absolute inset-0.5 rounded-full border border-slate-500/40 flex items-center justify-center">
+                    <RefreshCw className="w-5 h-5 text-cyan-400 filter drop-shadow-[0_0_2px_rgba(34,211,238,0.8)] animate-pulse" />
+                  </div>
                 </div>
-              </div>
-              <span className="font-display font-black text-lg text-white tracking-tighter uppercase">FindBack</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => alert('Civic broadcast alerts: Chennai Lost & Found dispatch active.')}
-              className="text-white p-1 hover:bg-blue-800 rounded relative cursor-pointer"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
-            </button>
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400 relative">
-              <img
-                className="w-full h-full object-cover"
-                alt="Logged-in User Profile Portrait"
-                src={user.avatarUrl}
-              />
-            </div>
-          </div>
-        </header>
-      )}
-
-      {/* Main Container Stage Body */}
-      <main className="flex-grow overflow-y-auto px-4 pt-4 pb-20">
-        
-        {/* Welcome Onboarding Screen */}
-        {currentScreen === 'welcome' && (
-          <WelcomeScreen
-            onStartFlow={handleStartFlow}
-            onLogin={handleLogin}
-          />
-        )}
-
-        {/* Home Screen Dashboard View (Visual 2) */}
-        {currentScreen === 'home' && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Found something CTA Banner */}
-            <div className="bg-blue-900 text-white p-5 rounded-lg border-l-4 border-amber-400 relative overflow-hidden shadow-md">
-              <div className="relative z-10 space-y-3.5">
-                <h3 className="font-display font-black text-lg leading-tight uppercase flex items-center gap-2">
-                  <span className="w-1.5 h-5 bg-amber-400 inline-block"></span>
-                  Found something?
-                </h3>
-                <p className="text-blue-100 text-xs leading-relaxed max-w-[240px]">
-                  Drop it off safely at any verified local partner hub in Chennai. Earn <span className="text-amber-400 font-extrabold">₹60 reward</span> once claimed!
-                </p>
-                <button
-                  onClick={() => {
-                    setActiveRole('finder');
-                    setCurrentScreen('report');
-                  }}
-                  className="w-full sm:w-auto px-5 py-3 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold uppercase tracking-wider text-[11px] rounded transition-all cursor-pointer shadow-lg shadow-blue-900/40"
-                >
-                  Report found item
-                </button>
-              </div>
-            </div>
-
-            {/* Nearest Recovery Hubs with Chennai mini map visualization */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
-                  <span className="w-1.5 h-4 bg-blue-600"></span>
-                  Nearest Recovery Hubs
-                </h4>
-                <button
-                  onClick={() => alert('Displaying map directory of all 5 verified Chennai FindBack Recovery partner hubs.')}
-                  className="text-[11px] text-blue-600 font-bold uppercase tracking-wider hover:underline"
-                >
-                  View All
-                </button>
-              </div>
-
-              {/* Dynamic Inline Vector Map representing Chennai Hubs */}
-              <div className="relative h-44 bg-slate-100 rounded overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center">
-                <svg className="absolute inset-0 w-full h-full text-slate-300 stroke-slate-200" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  {/* Grid layout */}
-                  <line x1="10" y1="0" x2="10" y2="100" strokeWidth="0.5" />
-                  <line x1="30" y1="0" x2="30" y2="100" strokeWidth="0.5" />
-                  <line x1="50" y1="0" x2="50" y2="100" strokeWidth="0.5" />
-                  <line x1="70" y1="0" x2="70" y2="100" strokeWidth="0.5" />
-                  <line x1="90" y1="0" x2="90" y2="100" strokeWidth="0.5" />
-                  <line x1="0" y1="20" x2="100" y2="20" strokeWidth="0.5" />
-                  <line x1="0" y1="50" x2="100" y2="50" strokeWidth="0.5" />
-                  <line x1="0" y1="80" x2="100" y2="80" strokeWidth="0.5" />
-                  {/* Mock Coastline for Chennai */}
-                  <path d="M 90 0 C 85 40, 80 60, 82 100" fill="none" stroke="#2563eb" strokeWidth="1.5" />
-                  {/* Bay of Bengal label */}
-                  <text x="84" y="30" fontSize="3" className="fill-blue-500 font-bold opacity-60 rotate-90 font-mono">BAY OF BENGAL</text>
-                </svg>
-
-                {/* Chennai pins */}
-                {/* Adyar */}
-                <div className="absolute top-[65%] left-[55%] flex flex-col items-center">
-                  <MapPin className="w-5 h-5 text-red-600 drop-shadow-sm fill-red-600" />
-                  <span className="text-[7px] font-bold text-slate-800 bg-white px-1 rounded shadow-sm border border-slate-300 mt-0.5">Adyar</span>
-                </div>
-
-                {/* T Nagar */}
-                <div className="absolute top-[40%] left-[45%] flex flex-col items-center">
-                  <MapPin className="w-5 h-5 text-blue-600 drop-shadow-sm fill-blue-600" />
-                  <span className="text-[7px] font-bold text-slate-800 bg-white px-1 rounded shadow-sm border border-slate-300 mt-0.5">T. Nagar</span>
-                </div>
-
-                {/* Anna Nagar */}
-                <div className="absolute top-[25%] left-[25%] flex flex-col items-center">
-                  <MapPin className="w-5 h-5 text-red-600 drop-shadow-sm fill-red-600" />
-                  <span className="text-[7px] font-bold text-slate-800 bg-white px-1 rounded shadow-sm border border-slate-300 mt-0.5">Anna Nagar</span>
-                </div>
-
-                {/* Velachery */}
-                <div className="absolute top-[80%] left-[35%] flex flex-col items-center">
-                  <MapPin className="w-5 h-5 text-red-600 drop-shadow-sm fill-red-600" />
-                  <span className="text-[7px] font-bold text-slate-800 bg-white px-1 rounded shadow-sm border border-slate-300 mt-0.5">Velachery</span>
+                <div>
+                  <span className="font-display font-black text-xl text-white tracking-tighter uppercase block">FindBack</span>
+                  <span className="text-[9px] font-mono font-bold tracking-widest text-cyan-400 block uppercase">Chennai Hub Ledger</span>
                 </div>
               </div>
 
-              {/* Horizontally scrollable Hub Cards */}
-              <div className="flex gap-3 overflow-x-auto hide-scrollbar py-1">
-                {CHENNAI_HUBS.map((hub) => (
-                  <div
-                    key={hub.id}
-                    onClick={() => alert(`Chennai Hub: ${hub.name}\nAddress: ${hub.address}`)}
-                    className="border border-slate-200 bg-white p-3.5 rounded flex-shrink-0 w-48 shadow-sm hover:border-blue-600 transition-colors cursor-pointer"
+              {/* Sophisticated Google User Session Profile Banner */}
+              <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800/80 flex flex-col items-center text-center space-y-3 shadow-inner">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-amber-400 relative shadow-lg">
+                    <img
+                      className="w-full h-full object-cover"
+                      alt="Authenticated Google Session Portrait"
+                      src={user.avatarUrl}
+                    />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-4 h-4 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-black tracking-wide text-white uppercase">{user.name}</h4>
+                  <p className="text-[10px] text-cyan-300 font-mono font-medium truncate max-w-[220px]">{user.email}</p>
+                  <span className="inline-block bg-blue-500/15 border border-blue-500/30 text-blue-300 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mt-1.5">
+                    Google Authorized
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 w-full pt-1.5 border-t border-slate-800">
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800/60 text-center">
+                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Reported</p>
+                    <p className="text-sm font-black text-white font-mono mt-0.5">{user.reportedCount}</p>
+                  </div>
+                  <div className="bg-slate-900/80 p-2 rounded-xl border border-slate-800/60 text-center">
+                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Rewards</p>
+                    <p className="text-sm font-black text-amber-400 font-mono mt-0.5">₹{user.balance}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sidebar Navigation Links */}
+              {currentScreen !== 'welcome' && (
+                <nav className="space-y-1">
+                  <p className="text-[9px] font-black tracking-widest text-slate-500 uppercase px-3 mb-2">Navigation</p>
+                  
+                  <button
+                    onClick={() => setCurrentScreen('home')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                      currentScreen === 'home'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <MapPin className="w-4 h-4 text-blue-600" />
-                      <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-100 px-1.5 py-0.5 rounded text-blue-800">
-                        {hub.distance}
+                    <Home className={`w-4 h-4 ${currentScreen === 'home' ? 'text-white' : 'text-slate-400'}`} />
+                    <span>Home Dashboard</span>
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentScreen('search')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                      currentScreen === 'search'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Search className={`w-4 h-4 ${currentScreen === 'search' ? 'text-white' : 'text-slate-400'}`} />
+                    <span>Search Ledger</span>
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentScreen('report')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                      currentScreen === 'report'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <PlusCircle className={`w-4 h-4 ${currentScreen === 'report' ? 'text-white' : 'text-slate-400'}`} />
+                    <span>Report Lost Tag</span>
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentScreen('rewards')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                      currentScreen === 'rewards'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Star className={`w-4 h-4 ${currentScreen === 'rewards' ? 'text-white' : 'text-slate-400'}`} />
+                    <span>My Rewards</span>
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentScreen('admin')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                      currentScreen === 'admin'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Sliders className={`w-4 h-4 ${currentScreen === 'admin' ? 'text-white' : 'text-slate-400'}`} />
+                    <span>Hub Operator Console</span>
+                  </button>
+                </nav>
+              )}
+            </div>
+
+            {/* Sidebar Bottom Controls & PERSPECTIVE SWITCHER */}
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
+                <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <Sliders className="w-3.5 h-3.5" />
+                  PERSPECTIVE SIMULATOR
+                </span>
+                <div className="grid grid-cols-3 gap-1 bg-slate-900 rounded p-0.5 border border-slate-800">
+                  {(['owner', 'finder', 'admin'] as const).map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => {
+                        setActiveRole(role);
+                        if (currentScreen === 'welcome') {
+                          setCurrentScreen('home');
+                        } else if (role === 'admin') {
+                          setCurrentScreen('admin');
+                        } else if (role === 'finder') {
+                          setCurrentScreen('report');
+                        } else {
+                          setCurrentScreen('home');
+                        }
+                        showBanner(`Switched to "${role.toUpperCase()}" workflow perspective.`);
+                      }}
+                      className={`px-1.5 py-1 rounded-[6px] text-[8px] uppercase font-black tracking-tight text-center transition-all cursor-pointer ${
+                        activeRole === role ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Diagnostic Footer */}
+              <div className="pt-2 border-t border-slate-800 space-y-2">
+                <div className="flex justify-between items-center text-[9px] text-slate-400 font-mono">
+                  <div className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>99.98% UPTIME</span>
+                  </div>
+                  <span>5 HUBS ACTIVE</span>
+                </div>
+                <button
+                  onClick={handleResetDemo}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all cursor-pointer border border-slate-700/50"
+                >
+                  Reset Chennai Ledger Database
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          {/* Desktop Right side Content Frame */}
+          <main className="flex-grow h-full flex flex-col bg-slate-50 overflow-hidden">
+            
+            {/* Desktop Top Header Bar */}
+            <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 shrink-0 shadow-sm">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-black font-display text-slate-900 uppercase tracking-tight">
+                  {currentScreen === 'welcome' && 'Welcome Onboarding'}
+                  {currentScreen === 'home' && 'FindBack Chennai Dashboard'}
+                  {currentScreen === 'search' && 'Interactive Recovery Ledger'}
+                  {currentScreen === 'report' && 'Submit Lost Item Drop-off'}
+                  {currentScreen === 'rewards' && 'Civic Rewards Ledger'}
+                  {currentScreen === 'admin' && 'Central Hub Operator Controls'}
+                </h1>
+                <span className="text-[10px] bg-blue-100 text-blue-800 border border-blue-200 font-black tracking-wider uppercase px-2 py-0.5 rounded-md">
+                  Perspective: {activeRole}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-[9px] text-slate-400 uppercase font-bold">Reward Balance</p>
+                  <p className="text-sm font-black text-emerald-600 font-mono">₹{user.balance}</p>
+                </div>
+                <button
+                  onClick={() => alert('Civic broadcast alerts: Chennai Lost & Found dispatch active active.')}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl relative cursor-pointer"
+                >
+                  <Bell className="w-4.5 h-4.5" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full border border-white"></span>
+                </button>
+              </div>
+            </header>
+
+            {/* Desktop Content Body Area */}
+            <div className="flex-grow momentum-scroll p-8 bg-slate-50 select-text">
+              
+              {currentScreen === 'welcome' && (
+                <div className="max-w-md mx-auto my-12">
+                  <WelcomeScreen
+                    onStartFlow={handleStartFlow}
+                    onLogin={handleLogin}
+                  />
+                </div>
+              )}
+
+              {currentScreen === 'home' && (
+                <div className="space-y-8 animate-fade-in">
+                  
+                  {/* SPACIOUS THREE-COLUMN DESKTOP DASHBOARD GRID */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    {/* Left & Center Main Workspace: Maps, Cards, Handover Info */}
+                    <div className="lg:col-span-2 space-y-6">
+                      
+                      {/* Interactive Found CTA card */}
+                      <div className="bg-gradient-to-r from-blue-900 to-blue-950 text-white p-6 rounded-2xl border-l-8 border-amber-400 shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="space-y-2 text-left">
+                          <span className="text-[9px] font-black tracking-widest text-cyan-400 uppercase">Handover Incentive Program</span>
+                          <h3 className="font-display font-black text-xl leading-tight uppercase">
+                            Discovered Lost Passenger Luggage?
+                          </h3>
+                          <p className="text-slate-300 text-xs leading-relaxed max-w-md">
+                            Safely tag and deposit found articles at any local depot. Receive an instant <span className="text-amber-400 font-black">₹60 reward</span> direct to your UPI wallet on claim settlement!
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setActiveRole('finder');
+                            setCurrentScreen('report');
+                          }}
+                          className="px-6 py-3.5 bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-900 font-extrabold uppercase tracking-widest text-xs rounded-xl transition-all shrink-0 cursor-pointer shadow-lg shadow-amber-400/20"
+                        >
+                          Report found item
+                        </button>
+                      </div>
+
+                      {/* Coverage Map Section */}
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-display font-black text-sm text-slate-800 uppercase flex items-center gap-2">
+                            <span className="w-1.5 h-5 bg-blue-600 inline-block"></span>
+                            Nearest Chennai Hub Network
+                          </h4>
+                          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">5 Active drop zones</span>
+                        </div>
+                        
+                        {/* Interactive map centered on Chennai */}
+                        <div className="shadow-md rounded-2xl overflow-hidden border border-slate-200">
+                          <SearchDashboard
+                            items={items}
+                            onClaimSubmitted={handleClaimSubmitted}
+                            onSimulateApproveClaim={handleApproveProof}
+                            onSimulatePayment={handleSettleUPI}
+                            onlyShowMap={true}
+                          />
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Right side Dashboard Sidebar panel (Profile status, Recents, Stats) */}
+                    <div className="lg:col-span-1 space-y-6">
+                      
+                      {/* Your Recent Items Ledger */}
+                      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 text-left">
+                        <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                          <span className="w-1.5 h-4 bg-blue-600"></span>
+                          Activity Tracker
+                        </h4>
+
+                        <div className="space-y-3">
+                          {/* Simulated Recent 1 */}
+                          <div className="bg-slate-50 rounded-xl border border-slate-150 p-3.5 flex items-center justify-between shadow-xs">
+                            <div className="flex gap-3 items-center">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
+                                <img src="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Keys" />
+                              </div>
+                              <div>
+                                <h5 className="font-black text-xs text-slate-800 uppercase">Silver Key Set</h5>
+                                <p className="text-[9px] font-mono text-slate-400 mt-0.5">T. Nagar Metro</p>
+                              </div>
+                            </div>
+                            <span className="text-[8px] font-black text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200 uppercase tracking-wider">
+                              Verifying
+                            </span>
+                          </div>
+
+                          {/* Simulated Recent 2 */}
+                          <div className="bg-slate-50 rounded-xl border border-slate-150 p-3.5 flex items-center justify-between shadow-xs">
+                            <div className="flex gap-3 items-center">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
+                                <img src="https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Wallet" />
+                              </div>
+                              <div>
+                                <h5 className="font-black text-xs text-slate-800 uppercase">Leather Wallet</h5>
+                                <p className="text-[9px] font-mono text-slate-400 mt-0.5">Adyar Hub</p>
+                              </div>
+                            </div>
+                            <span className="text-[8px] font-black text-green-700 bg-green-50 px-2 py-1 rounded-md border border-green-200 uppercase tracking-wider">
+                              Ready Pickup
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Chennai Recovery Hub quick statistics */}
+                      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 text-left">
+                        <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                          <span className="w-1.5 h-4 bg-emerald-600"></span>
+                          Chennai Node Stats
+                        </h4>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-150">
+                            <span className="text-[8px] font-black uppercase text-slate-400 block tracking-wider">Reports Logged</span>
+                            <span className="text-lg font-black text-blue-900 font-mono block mt-1">{items.length + 3}</span>
+                          </div>
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-150">
+                            <span className="text-[8px] font-black uppercase text-slate-400 block tracking-wider">Escrow Disbursed</span>
+                            <span className="text-lg font-black text-emerald-600 font-mono block mt-1">₹14,580</span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+              )}
+
+              {currentScreen === 'search' && (
+                <div className="max-w-5xl mx-auto">
+                  <SearchDashboard
+                    items={items}
+                    onClaimSubmitted={handleClaimSubmitted}
+                    onSimulateApproveClaim={handleApproveProof}
+                    onSimulatePayment={handleSettleUPI}
+                  />
+                </div>
+              )}
+
+              {currentScreen === 'report' && (
+                <div className="max-w-xl mx-auto">
+                  <FinderFlow
+                    onItemCreated={handleItemCreated}
+                    onNavigateHome={() => setCurrentScreen('home')}
+                  />
+                </div>
+              )}
+
+              {currentScreen === 'rewards' && (
+                <div className="max-w-xl mx-auto space-y-6">
+                  <div className="bg-blue-900 text-white p-6 rounded-2xl border-l-4 border-amber-400 shadow-md text-center">
+                    <Star className="w-10 h-10 text-amber-400 fill-amber-400 mx-auto" />
+                    <h3 className="font-display font-black text-lg mt-1.5 uppercase tracking-wider">FindBack Civic Wallet</h3>
+                    <p className="text-blue-200 text-[11px] uppercase tracking-wider font-semibold">Chennai Hub Ledger Balance</p>
+
+                    <div className="mt-4 pt-4 border-t border-blue-800">
+                      <p className="text-[10px] uppercase font-bold text-blue-300 tracking-wider">Withdrawal Account</p>
+                      <p className="text-3xl font-black text-amber-400 mt-1 font-mono">₹{user.balance}</p>
+                      <p className="text-[10px] text-emerald-400 font-bold mt-1.5 uppercase tracking-wider">✓ Active Auto-payout to {user.email.split('@')[0]}@okaxis</p>
+                    </div>
+                  </div>
+
+                  {/* Profile Statistics */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 text-left space-y-3.5 shadow-sm">
+                    <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
+                      <span className="w-1.5 h-4 bg-blue-600"></span>
+                      Chennai Civic Records
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 divide-x divide-slate-200">
+                      <div className="text-center">
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Articles Reported</p>
+                        <p className="text-xl font-black text-blue-900 mt-0.5 font-mono">{user.reportedCount}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Escrows Settled</p>
+                        <p className="text-xl font-black text-blue-900 mt-0.5 font-mono">{user.claimedCount}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payout channels list */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 text-left space-y-3.5 shadow-sm">
+                    <h4 className="font-display font-black text-xs uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
+                      <span className="w-1.5 h-4 bg-emerald-500"></span>
+                      Reward Settlements History
+                    </h4>
+                    <div className="divide-y divide-slate-100 text-xs text-slate-600">
+                      <div className="py-2.5 flex justify-between">
+                        <div>
+                          <p className="font-bold text-slate-800">Tan Leather Wallet finder reward</p>
+                          <p className="text-[10px] text-slate-400 font-mono">Completed • {user.email.split('@')[0]}@okaxis</p>
+                        </div>
+                        <span className="font-black text-emerald-600 shrink-0 font-mono">+₹60</span>
+                      </div>
+                      <div className="py-2.5 flex justify-between">
+                        <div>
+                          <p className="font-bold text-slate-800">Honda Key Fob locator reward</p>
+                          <p className="text-[10px] text-slate-400 font-mono">Completed • {user.email.split('@')[0]}@okaxis</p>
+                        </div>
+                        <span className="font-black text-emerald-600 shrink-0 font-mono">+₹60</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentScreen === 'admin' && (
+                <div className="max-w-5xl mx-auto space-y-6">
+                  <AdminHub
+                    items={items}
+                    onApproveProof={handleApproveProof}
+                    onRejectProof={handleRejectProof}
+                    onSettleUPI={handleSettleUPI}
+                  />
+                </div>
+              )}
+
+            </div>
+          </main>
+
+        </div>
+      ) : (
+        /* ==========================================
+           MOBILE PORTRAIT MODE / RIGID VIEWSTRUCTURE 
+           ========================================== */
+        <div className="w-full max-w-[480px] h-screen bg-slate-50 flex flex-col shadow-2xl relative border-x border-slate-800 overflow-hidden mx-auto">
+          
+          {/* Onboarding Mode Switcher for easily testing perspectives */}
+          <div className="bg-slate-900 text-slate-300 px-3 py-2 flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase border-b-2 border-slate-800 shrink-0 select-none z-50">
+            <span className="text-amber-400 flex items-center gap-1 font-display">
+              <Sliders className="w-3 h-3" />
+              Role:
+            </span>
+            <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700">
+              {(['owner', 'finder', 'admin'] as const).map((role) => (
+                <button
+                  key={role}
+                  onClick={() => {
+                    setActiveRole(role);
+                    if (currentScreen === 'welcome') {
+                      setCurrentScreen('home');
+                    } else if (role === 'admin') {
+                      setCurrentScreen('admin');
+                    } else if (role === 'finder') {
+                      setCurrentScreen('report');
+                    } else {
+                      setCurrentScreen('home');
+                    }
+                    showBanner(`Switched view to "${role.toUpperCase()}".`);
+                  }}
+                  className={`px-2 py-0.5 rounded text-[8px] uppercase font-bold transition-all cursor-pointer ${
+                    activeRole === role ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sticky Header Top App Bar */}
+          {currentScreen !== 'welcome' && (
+            <header className="sticky top-0 w-full z-40 bg-blue-900 text-white flex justify-between items-center px-4 py-3 border-b-4 border-amber-400 shrink-0 shadow-md select-none">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded bg-gradient-to-b from-blue-950 to-blue-900 flex items-center justify-center border border-slate-700 relative overflow-hidden">
+                  <RefreshCw className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                </div>
+                <span className="font-display font-black text-base text-white tracking-tighter uppercase">FindBack</span>
+              </div>
+
+              {/* Dynamic Google User Session Portrait */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => alert('Civic broadcast alerts: Chennai Lost & Found dispatch active.')}
+                  className="text-white p-1 hover:bg-blue-800 rounded relative cursor-pointer"
+                >
+                  <Bell className="w-4.5 h-4.5" />
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
+                </button>
+                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400 relative shrink-0">
+                  <img
+                    className="w-full h-full object-cover"
+                    alt="Logged-in Google session avatar"
+                    src={user.avatarUrl}
+                  />
+                </div>
+              </div>
+            </header>
+          )}
+
+          {/* Main Independent Touch Scrolling stage */}
+          <main className="flex-grow momentum-scroll px-4 pt-4 pb-24 bg-slate-50 select-text">
+            
+            {currentScreen === 'welcome' && (
+              <WelcomeScreen
+                onStartFlow={handleStartFlow}
+                onLogin={handleLogin}
+              />
+            )}
+
+            {currentScreen === 'home' && (
+              <div className="space-y-5 animate-fade-in text-left">
+                
+                {/* Google user Session banner on mobile */}
+                <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between shadow-md select-none">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative">
+                      <img src={user.avatarUrl} className="w-10 h-10 rounded-full object-cover border border-cyan-400" alt="Avatar" />
+                      <div className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-slate-900"></div>
+                    </div>
+                    <div>
+                      <p className="text-[8px] text-cyan-300 font-extrabold uppercase tracking-wider leading-none">Verified Chennai Member</p>
+                      <h4 className="text-xs font-black uppercase text-white tracking-tight mt-0.5 leading-tight">{user.name}</h4>
+                      <p className="text-[8px] text-slate-400 font-mono truncate max-w-[140px] leading-tight">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="text-right bg-slate-950/60 px-2.5 py-1 rounded-xl border border-slate-800 shrink-0">
+                    <p className="text-[7px] text-slate-500 font-bold uppercase tracking-wider">Wallet</p>
+                    <p className="text-xs font-black text-amber-400 font-mono">₹{user.balance}</p>
+                  </div>
+                </div>
+
+                {/* Found something CTA Card */}
+                <div className="bg-blue-900 text-white p-4.5 rounded-2xl border-l-4 border-amber-400 shadow-md">
+                  <h3 className="font-display font-black text-sm uppercase flex items-center gap-1.5">
+                    <span className="w-1 h-4 bg-amber-400 inline-block"></span>
+                    Found something?
+                  </h3>
+                  <p className="text-blue-100 text-[11px] leading-relaxed mt-1.5">
+                    Drop it at any Chennai hub. Secure a <span className="text-amber-400 font-extrabold">₹60 reward</span> on successful ledger verification!
+                  </p>
+                  <button
+                    onClick={() => {
+                      setActiveRole('finder');
+                      setCurrentScreen('report');
+                    }}
+                    className="w-full mt-3 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold uppercase tracking-widest text-[10px] rounded-xl transition-all cursor-pointer shadow-lg"
+                  >
+                    Report found item
+                  </button>
+                </div>
+
+                {/* Map Section */}
+                <div className="space-y-2.5">
+                  <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
+                    <span className="w-1 h-3.5 bg-blue-600 inline-block"></span>
+                    Chennai Drop zones
+                  </h4>
+                  
+                  {/* Interactive map widget compact size for mobile screen */}
+                  <div className="shadow-sm rounded-2xl overflow-hidden border border-slate-200">
+                    <SearchDashboard
+                      items={items}
+                      onClaimSubmitted={handleClaimSubmitted}
+                      onSimulateApproveClaim={handleApproveProof}
+                      onSimulatePayment={handleSettleUPI}
+                      onlyShowMap={true}
+                    />
+                  </div>
+                </div>
+
+                {/* Recent Items Tracker */}
+                <div className="space-y-2.5">
+                  <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
+                    <span className="w-1 h-3.5 bg-blue-600 inline-block"></span>
+                    Recent Activity
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="bg-white rounded-xl border border-slate-200 p-3 flex items-center justify-between shadow-xs">
+                      <div className="flex gap-3 items-center">
+                        <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
+                          <img src="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Keys" />
+                        </div>
+                        <div>
+                          <h5 className="font-black text-[11px] text-slate-800 uppercase leading-none">Silver Key Set</h5>
+                          <p className="text-[8px] font-mono text-slate-400 mt-1">Under verification</p>
+                        </div>
+                      </div>
+                      <span className="text-[8px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase tracking-wide">
+                        Verifying
                       </span>
                     </div>
-                    <h5 className="font-display font-black text-xs text-slate-800 uppercase mt-2">{hub.name}</h5>
-                    <p className="text-[10px] text-slate-500 mt-1 leading-tight font-medium">{hub.gate || 'Reception'}</p>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Your recent items */}
-            <div className="space-y-3">
-              <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
-                <span className="w-1.5 h-4 bg-blue-600"></span>
-                Your recent items
-              </h4>
-
-              <div className="space-y-2.5">
-                {/* Simulated Recent 1 */}
-                <div className="bg-white rounded border border-slate-200 border-l-4 border-amber-500 p-3 flex items-center justify-between shadow-sm">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-12 h-12 rounded overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
-                      <img src="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Keys" />
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-xs text-slate-800">Silver Key Set</h5>
-                      <div className="flex gap-1.5 mt-1">
-                        <span className="text-[9px] font-black uppercase bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">
-                          LOST
-                        </span>
-                        <span className="text-[9px] font-black uppercase bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
-                          KEYS
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase tracking-wider">
-                    Under verification
-                  </span>
                 </div>
 
-                {/* Simulated Recent 2 */}
-                <div className="bg-white rounded border border-slate-200 border-l-4 border-emerald-500 p-3 flex items-center justify-between shadow-sm">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-12 h-12 rounded overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
-                      <img src="https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Wallet" />
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-xs text-slate-800">Black Leather Wallet</h5>
-                      <div className="flex gap-1.5 mt-1">
-                        <span className="text-[9px] font-black uppercase bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-                          FOUND
-                        </span>
-                        <span className="text-[9px] font-black uppercase bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">
-                          ACCESSORY
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 uppercase tracking-wider">
-                    Ready for pickup
-                  </span>
+                {/* Simulated reset database button */}
+                <div className="p-3.5 bg-slate-100 border border-slate-200 rounded-xl text-center space-y-1.5">
+                  <p className="text-[9px] text-slate-400 leading-tight">
+                    Clean sandbox parameters at any point:
+                  </p>
+                  <button
+                    onClick={handleResetDemo}
+                    className="w-full py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-lg text-[9px] font-bold transition-colors cursor-pointer uppercase tracking-wider"
+                  >
+                    Reset In-Memory Database
+                  </button>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Simulated stats reset block for demo */}
-            <div className="p-4 bg-slate-100 border border-slate-200 rounded text-center space-y-2">
-              <p className="text-[10px] text-slate-500 leading-tight">
-                Data reported via Finders flow dynamically updates the Owner Search and Admin review lists! Use the button below to restore clean defaults at any time:
-              </p>
+            {currentScreen === 'search' && (
+              <SearchDashboard
+                items={items}
+                onClaimSubmitted={handleClaimSubmitted}
+                onSimulateApproveClaim={handleApproveProof}
+                onSimulatePayment={handleSettleUPI}
+              />
+            )}
+
+            {currentScreen === 'report' && (
+              <FinderFlow
+                onItemCreated={handleItemCreated}
+                onNavigateHome={() => setCurrentScreen('home')}
+              />
+            )}
+
+            {currentScreen === 'rewards' && (
+              <div className="space-y-5 animate-fade-in text-left">
+                <div className="bg-blue-900 text-white p-5 rounded-2xl border-l-4 border-amber-400 shadow-md text-center">
+                  <Star className="w-9 h-9 text-amber-400 fill-amber-400 mx-auto" />
+                  <h3 className="font-display font-black text-base mt-1.5 uppercase tracking-wider">FindBack Civic Wallet</h3>
+                  <p className="text-blue-200 text-[10px]">Chennai Ledger rewards balance</p>
+
+                  <div className="mt-4 pt-3 border-t border-blue-800 text-center">
+                    <p className="text-[9px] uppercase font-bold text-blue-300 tracking-wider">Withdrawable</p>
+                    <p className="text-2xl font-black text-amber-400 mt-1 font-mono">₹{user.balance}</p>
+                    <p className="text-[8px] text-emerald-400 font-bold mt-1.5 uppercase tracking-wider">✓ Instant UPI auto-settle</p>
+                  </div>
+                </div>
+
+                {/* Profile Statistics */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 text-left space-y-3 shadow-sm">
+                  <h4 className="font-display font-black text-[11px] text-slate-800 uppercase flex items-center gap-1.5">
+                    <span className="w-1 h-3.5 bg-blue-600 inline-block"></span>
+                    Civic Stats
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 divide-x divide-slate-100">
+                    <div className="text-center">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Reported</p>
+                      <p className="text-lg font-black text-blue-900 mt-0.5 font-mono">{user.reportedCount}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Settled</p>
+                      <p className="text-lg font-black text-blue-900 mt-0.5 font-mono">{user.claimedCount}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payout channels list */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 text-left space-y-3 shadow-sm">
+                  <h4 className="font-display font-black text-[11px] uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
+                    <span className="w-1 h-3.5 bg-emerald-500 inline-block"></span>
+                    Settlements History
+                  </h4>
+                  <div className="divide-y divide-slate-100 text-[11px] text-slate-600">
+                    <div className="py-2 flex justify-between">
+                      <div>
+                        <p className="font-bold text-slate-800">Tan Wallet reward</p>
+                        <p className="text-[9px] text-slate-400 font-mono">Completed</p>
+                      </div>
+                      <span className="font-black text-emerald-600 shrink-0 font-mono">+₹60</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentScreen === 'admin' && (
+              <AdminHub
+                items={items}
+                onApproveProof={handleApproveProof}
+                onRejectProof={handleRejectProof}
+                onSettleUPI={handleSettleUPI}
+              />
+            )}
+
+          </main>
+
+          {/* Sticky Footer */}
+          <footer className="sticky bottom-12 w-full bg-slate-900 text-[8px] font-mono py-2 px-3 text-slate-400 shrink-0 flex justify-between items-center border-t border-slate-800 select-none z-40">
+            <div className="flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+              <span>LIVE FEED STATUS: LIVE</span>
+            </div>
+            <div>UPTIME: 99.98%</div>
+          </footer>
+
+          {/* Sticky Bottom Navigation Bar (Visual 2) */}
+          {currentScreen !== 'welcome' && (
+            <nav className="absolute bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 bg-white border-t border-slate-200 z-50 shadow-xl shrink-0 select-none">
               <button
-                onClick={handleResetDemo}
-                className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-bold transition-colors cursor-pointer uppercase tracking-wider"
+                onClick={() => setCurrentScreen('home')}
+                className={`flex flex-col items-center justify-center p-1.5 px-3 transition-all text-center rounded cursor-pointer ${
+                  currentScreen === 'home'
+                    ? 'text-blue-900 font-bold border-b-2 border-blue-900'
+                    : 'text-slate-500 hover:text-blue-900'
+                }`}
               >
-                Reset In-Memory Database
+                <Home className={`w-4.5 h-4.5 ${currentScreen === 'home' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
+                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Home</span>
               </button>
-            </div>
-          </div>
-        )}
 
-        {/* 1. Finder Flow: Wizard page (Step 1 -> 2 -> 3) */}
-        {currentScreen === 'report' && (
-          <FinderFlow
-            onItemCreated={handleItemCreated}
-            onNavigateHome={() => setCurrentScreen('home')}
-          />
-        )}
+              <button
+                onClick={() => setCurrentScreen('search')}
+                className={`flex flex-col items-center justify-center p-1.5 px-3 transition-all text-center rounded cursor-pointer ${
+                  currentScreen === 'search'
+                    ? 'text-blue-900 font-bold border-b-2 border-blue-900'
+                    : 'text-slate-500 hover:text-blue-900'
+                }`}
+              >
+                <Search className={`w-4.5 h-4.5 ${currentScreen === 'search' ? 'text-blue-900' : 'text-slate-500'}`} />
+                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Search</span>
+              </button>
 
-        {/* 2. Owner Flow: Search Gallery & Claim Verification Detail */}
-        {currentScreen === 'search' && (
-          <SearchDashboard
-            items={items}
-            onClaimSubmitted={handleClaimSubmitted}
-            onSimulateApproveClaim={handleApproveProof}
-            onSimulatePayment={handleSettleUPI}
-          />
-        )}
+              <button
+                onClick={() => setCurrentScreen('report')}
+                className={`flex flex-col items-center justify-center p-1.5 px-3 transition-all text-center rounded cursor-pointer ${
+                  currentScreen === 'report'
+                    ? 'text-blue-900 font-bold border-b-2 border-blue-900'
+                    : 'text-slate-500 hover:text-blue-900'
+                }`}
+              >
+                <PlusCircle className={`w-4.5 h-4.5 ${currentScreen === 'report' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
+                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Report</span>
+              </button>
 
-        {/* Rewards / Account Wallet Screen */}
-        {currentScreen === 'rewards' && (
-          <div className="space-y-6 animate-fade-in text-center">
-            <div className="bg-blue-900 text-white p-6 rounded border-l-4 border-amber-400 shadow-md">
-              <Star className="w-10 h-10 text-amber-400 fill-amber-400 mx-auto" />
-              <h3 className="font-display font-black text-lg mt-1.5 uppercase tracking-wider">FindBack Wallet</h3>
-              <p className="text-blue-200 text-[11px]">Chennai Community reward ledger</p>
+              <button
+                onClick={() => setCurrentScreen('rewards')}
+                className={`flex flex-col items-center justify-center p-1.5 px-3 transition-all text-center rounded cursor-pointer ${
+                  currentScreen === 'rewards'
+                    ? 'text-blue-900 font-bold border-b-2 border-blue-900'
+                    : 'text-slate-500 hover:text-blue-900'
+                }`}
+              >
+                <Star className={`w-4.5 h-4.5 ${currentScreen === 'rewards' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
+                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Rewards</span>
+              </button>
+            </nav>
+          )}
 
-              <div className="mt-4 pt-4 border-t border-blue-800">
-                <p className="text-[10px] uppercase font-bold text-blue-300 tracking-wider">Available Reward Balance</p>
-                <p className="text-3xl font-black text-amber-400 mt-1 font-mono">₹{user.balance}</p>
-                <p className="text-[10px] text-emerald-400 font-bold mt-1 uppercase tracking-wider">✓ Instant withdrawal active via UPI ID</p>
-              </div>
-            </div>
-
-            {/* Profile Statistics */}
-            <div className="bg-white border border-slate-200 rounded p-4 text-left space-y-3.5 shadow-sm">
-              <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
-                <span className="w-1.5 h-4 bg-blue-600"></span>
-                Your Chennai Statistics
-              </h4>
-              <div className="grid grid-cols-2 gap-4 divide-x divide-slate-200">
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Items Reported</p>
-                  <p className="text-xl font-black text-blue-900 mt-0.5 font-mono">{user.reportedCount}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Claims Settled</p>
-                  <p className="text-xl font-black text-blue-900 mt-0.5 font-mono">{user.claimedCount}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Payout channels list */}
-            <div className="bg-white border border-slate-200 rounded p-4 text-left space-y-3.5 shadow-sm">
-              <h4 className="font-display font-black text-xs uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
-                <span className="w-1.5 h-4 bg-emerald-500"></span>
-                Settled Micro-rewards Payout History
-              </h4>
-              <div className="divide-y divide-slate-100 text-xs text-slate-600">
-                <div className="py-2.5 flex justify-between">
-                  <div>
-                    <p className="font-bold text-slate-800">Black Leather Wallet reward</p>
-                    <p className="text-[10px] text-slate-500 font-mono">Transferred to UPI: {user.email.split('@')[0]}@okaxis</p>
-                  </div>
-                  <span className="font-black text-emerald-600 shrink-0 font-mono">+₹60</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <div>
-                    <p className="font-bold text-slate-800">Silver Keychain finder reward</p>
-                    <p className="text-[10px] text-slate-500 font-mono">Transferred to UPI: {user.email.split('@')[0]}@okaxis</p>
-                  </div>
-                  <span className="font-black text-emerald-600 shrink-0 font-mono">+₹60</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 3. Admin View: Hub Operator Inventory Status and Claim approvals */}
-        {currentScreen === 'admin' && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="pb-1">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
-                Chennai Central Operations
-              </span>
-              <h2 className="text-lg font-black font-display text-slate-800 uppercase mt-2 flex items-center gap-1.5">
-                <span className="w-1.5 h-5 bg-blue-600"></span>
-                FindBack Hub Console
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                Verify proofs of ownership, inspect Aadhaar matching, and coordinate UPI escrow reward disbursements.
-              </p>
-            </div>
-
-            <AdminHub
-              items={items}
-              onApproveProof={handleApproveProof}
-              onRejectProof={handleRejectProof}
-              onSettleUPI={handleSettleUPI}
-            />
-          </div>
-        )}
-
-      </main>
-
-      {/* Geometric Status Footer */}
-      {currentScreen !== 'welcome' && (
-        <footer className="bg-slate-900 text-[9px] font-mono py-2 px-3 text-slate-400 shrink-0 flex flex-wrap justify-between items-center gap-1.5 border-t border-slate-800 mb-14">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>STATUS: OPERATIONAL</span>
-          </div>
-          <div>UPTIME: 99.98%</div>
-          <div>HUBS: 5 ACTIVE</div>
-        </footer>
-      )}
-
-      {/* Bottom Floating Navigation tab bar (Visual 2) */}
-      {currentScreen !== 'welcome' && (
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[375px] flex justify-around items-center px-4 py-2.5 bg-white border-t border-slate-200 z-50 shadow-lg shrink-0">
-          <button
-            onClick={() => setCurrentScreen('home')}
-            className={`flex flex-col items-center justify-center p-1 px-3 transition-all text-center rounded cursor-pointer ${
-              currentScreen === 'home'
-                ? 'text-blue-900 font-bold border-b-2 border-blue-900 pb-0.5'
-                : 'text-slate-500 hover:text-blue-900'
-            }`}
-          >
-            <Home className={`w-5 h-5 ${currentScreen === 'home' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
-            <span className="text-[9px] font-bold mt-0.5 font-display uppercase tracking-wider">Home</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentScreen('search')}
-            className={`flex flex-col items-center justify-center p-1 px-3 transition-all text-center rounded cursor-pointer ${
-              currentScreen === 'search'
-                ? 'text-blue-900 font-bold border-b-2 border-blue-900 pb-0.5'
-                : 'text-slate-500 hover:text-blue-900'
-            }`}
-          >
-            <Search className={`w-5 h-5 ${currentScreen === 'search' ? 'text-blue-900' : 'text-slate-500'}`} />
-            <span className="text-[9px] font-bold mt-0.5 font-display uppercase tracking-wider">Search</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentScreen('report')}
-            className={`flex flex-col items-center justify-center p-1 px-3 transition-all text-center rounded cursor-pointer ${
-              currentScreen === 'report'
-                ? 'text-blue-900 font-bold border-b-2 border-blue-900 pb-0.5'
-                : 'text-slate-500 hover:text-blue-900'
-            }`}
-          >
-            <PlusCircle className={`w-5 h-5 ${currentScreen === 'report' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
-            <span className="text-[9px] font-bold mt-0.5 font-display uppercase tracking-wider">Report</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentScreen('rewards')}
-            className={`flex flex-col items-center justify-center p-1 px-3 transition-all text-center rounded cursor-pointer ${
-              currentScreen === 'rewards'
-                ? 'text-blue-900 font-bold border-b-2 border-blue-900 pb-0.5'
-                : 'text-slate-500 hover:text-blue-900'
-            }`}
-          >
-            <Star className={`w-5 h-5 ${currentScreen === 'rewards' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
-            <span className="text-[9px] font-bold mt-0.5 font-display uppercase tracking-wider">Rewards</span>
-          </button>
-        </nav>
+        </div>
       )}
 
     </div>

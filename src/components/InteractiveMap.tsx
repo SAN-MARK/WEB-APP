@@ -24,17 +24,19 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ onSelectHub, act
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
 
-  const [mapMode, setMapMode] = useState<'standard' | 'satellite'>('standard');
+  const [mapMode, setMapMode] = useState<'standard' | 'satellite' | 'terrain'>('standard');
   const [selectedHubId, setSelectedHubId] = useState<string | null>(activeHubId || null);
 
   const tileUrls = {
     standard: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+    satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    terrain: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'
   };
 
   const attributions = {
     standard: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    satellite: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    satellite: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    terrain: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
   };
 
   // Switch map view mode
@@ -71,7 +73,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ onSelectHub, act
     }
   }, [activeHubId]);
 
-  // Map Initialization
+  // Map Initialization & ResizeObserver
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -139,8 +141,22 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ onSelectHub, act
       markersRef.current[hub.id] = marker;
     });
 
-    // Cleanup map on unmount
+    // Setup ResizeObserver to properly handle Leaflet invalidation on screen adjust
+    let resizeTimer: NodeJS.Timeout;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize({ animate: true });
+        }
+      }, 150);
+    });
+    observer.observe(mapContainerRef.current);
+
+    // Cleanup map and observer on unmount
     return () => {
+      observer.disconnect();
+      clearTimeout(resizeTimer);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -163,36 +179,48 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({ onSelectHub, act
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 self-stretch sm:self-auto shadow-inner">
+        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-stretch sm:self-auto shadow-inner overflow-x-auto hide-scrollbar">
           <button
             type="button"
             onClick={() => setMapMode('standard')}
-            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shrink-0 ${
               mapMode === 'standard'
                 ? 'bg-blue-900 text-cyan-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            Standard View
+            <Layers className="w-3 h-3" />
+            Standard
           </button>
           <button
             type="button"
             onClick={() => setMapMode('satellite')}
-            className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shrink-0 ${
               mapMode === 'satellite'
                 ? 'bg-blue-900 text-cyan-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Satellite View
+            <RefreshCw className="w-3 h-3" />
+            Satellite
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapMode('terrain')}
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shrink-0 ${
+              mapMode === 'terrain'
+                ? 'bg-blue-900 text-cyan-400 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <MapPin className="w-3 h-3" />
+            Terrain
           </button>
         </div>
       </div>
 
       {/* Actual Map Canvas Area */}
-      <div className="relative w-full h-[320px] bg-slate-100">
+      <div className="relative w-full h-[240px] md:h-[450px] bg-slate-100">
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
         {/* Floating Indicator Overlay */}
