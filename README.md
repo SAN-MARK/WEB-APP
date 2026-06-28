@@ -6,7 +6,7 @@
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/e09d311c-2a35-4cf5-8812-f548b2044fb9
+View your app in AI Studio: https://findback-84.vercel.app
 
 ## Run Locally
 
