@@ -48,6 +48,7 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
     const dd = String(today.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   });
+  const [rewardAmountInput, setRewardAmountInput] = useState<string>('200');
 
   React.useEffect(() => {
     if (currentUser) {
@@ -181,6 +182,10 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
     e.preventDefault();
     if (!description || !location) return;
 
+    // Calculate Reward Amount and Service Fee (30%)
+    const rewardVal = Number(rewardAmountInput) || 0;
+    const calculatedFee = Math.round(rewardVal * 0.3);
+
     // Map a submission id
     const randNum1 = Math.floor(100 + Math.random() * 900);
     const randNum2 = Math.floor(1000 + Math.random() * 9000);
@@ -202,8 +207,8 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
       description,
       reporterName: finderName,
       reporterEmail: finderEmail,
-      rewardAmount: 60,
-      serviceFee: 200,
+      rewardAmount: rewardVal,
+      serviceFee: calculatedFee,
       hasPaidEscrow: false
     };
 
@@ -226,7 +231,9 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
         "Item Name": `${category} found at ${location.split(',')[0]}`,
         "Location": assignedHub.name,
         "Description": description,
-        "Date Found": foundDate
+        "Date Found": foundDate,
+        RewardAmount: rewardVal,
+        ServiceFee: calculatedFee
       });
 
       setIsLoading(false);
@@ -515,6 +522,29 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
                       onChange={(e) => setFoundDate(e.target.value)}
                       className="w-full p-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all font-mono"
                     />
+                  </div>
+
+                  <div className="space-y-1.5 col-span-1 sm:col-span-2 border-t border-slate-100 pt-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Estimated Value or Reward Amount (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3.5 text-slate-500 text-sm font-bold">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        value={rewardAmountInput}
+                        onChange={(e) => setRewardAmountInput(e.target.value)}
+                        placeholder="e.g. 500"
+                        className="w-full pl-7 pr-3 py-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all font-mono font-bold text-slate-800"
+                      />
+                    </div>
+                    {rewardAmountInput && (
+                      <p className="text-[10px] text-blue-600 font-extrabold uppercase tracking-wide">
+                        ✓ Calculated 30% platform service fee: ₹{Math.round(Number(rewardAmountInput) * 0.3)}
+                      </p>
+                    )}
                   </div>
                 </div>
 

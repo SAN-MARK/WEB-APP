@@ -17,7 +17,8 @@ import {
   Home,
   Search,
   PlusCircle,
-  RefreshCw
+  RefreshCw,
+  TrendingUp
 } from 'lucide-react';
 
 function AvatarImage({ user, className }: { user: UserProfile; className: string }) {
@@ -98,9 +99,9 @@ function mapRowToFoundItem(row: any, index: number): FoundItem {
     description,
     reporterName: row.FinderName || 'Anonymous Finder',
     reporterEmail: row.FinderEmail || '',
-    rewardAmount: row.rewardAmount || 60,
+    rewardAmount: Number(row.RewardAmount || row.rewardAmount || 60),
     hasPaidEscrow: row.hasPaidEscrow === 'true' || row.hasPaidEscrow === true || false,
-    serviceFee: row.serviceFee || 200,
+    serviceFee: Number(row.ServiceFee !== undefined ? row.ServiceFee : (row.serviceFee !== undefined ? row.serviceFee : Math.round(Number(row.RewardAmount || row.rewardAmount || 60) * 0.3))),
     proof: row.OwnerProof ? {
       fullName: 'Owner',
       mobileNumber: '',
@@ -187,6 +188,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('findback_isAdminLoggedIn', String(isAdminLoggedIn));
   }, [isAdminLoggedIn]);
+
+  // Sum up pending service fees for items reported by this user that are not yet claimed
+  const pendingServiceFeeTotal = items
+    .filter(item => (item.reporterEmail || '').trim().toLowerCase() === user.email.trim().toLowerCase() && item.status !== 'Claimed')
+    .reduce((sum, item) => sum + (item.serviceFee || 0), 0);
 
   // Show dynamic banner notifications
   const showBanner = (msg: string) => {
@@ -617,6 +623,23 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* Pending Service Fee Card */}
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-left shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-amber-400 text-slate-900 rounded-xl">
+                        <TrendingUp className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-display font-black text-sm text-slate-800 uppercase tracking-wider">
+                          Pending Service Fee: ₹{pendingServiceFeeTotal}
+                        </h4>
+                        <p className="text-[10px] text-slate-600 uppercase tracking-wide mt-0.5">
+                          Calculated 30% on active reported items
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Profile Statistics */}
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 text-left space-y-3.5 shadow-sm">
                     <h4 className="font-display font-black text-xs text-slate-800 uppercase flex items-center gap-1.5">
@@ -796,6 +819,23 @@ export default function App() {
                     <p className="text-[9px] uppercase font-bold text-blue-300 tracking-wider">Withdrawable</p>
                     <p className="text-2xl font-black text-amber-400 mt-1 font-mono">₹{user.balance}</p>
                     <p className="text-[8px] text-emerald-400 font-bold mt-1.5 uppercase tracking-wider">✓ Instant UPI auto-settle</p>
+                  </div>
+                </div>
+
+                {/* Pending Service Fee Card */}
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left shadow-sm flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-400 text-slate-900 rounded-lg">
+                      <TrendingUp className="w-4.5 h-4.5" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-black text-xs text-slate-800 uppercase tracking-wider">
+                        Pending Service Fee: ₹{pendingServiceFeeTotal}
+                      </h4>
+                      <p className="text-[9px] text-slate-600 uppercase tracking-wide mt-0.5">
+                        Calculated 30% on active reported items
+                      </p>
+                    </div>
                   </div>
                 </div>
 

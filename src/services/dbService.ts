@@ -39,6 +39,8 @@ export interface FoundItemSubmissionPayload {
   "Location"?: string;
   "Description"?: string;
   "Date Found"?: string;
+  RewardAmount?: number;
+  ServiceFee?: number;
 }
 
 export interface IdentityVerificationPayload {

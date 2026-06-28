@@ -25,6 +25,8 @@ export interface LiveFoundItem {
   Status?: string;
   ImageReference?: string;
   OwnerProof?: string;
+  RewardAmount?: string | number;
+  ServiceFee?: string | number;
 }
 
 export const apiRouter = {
