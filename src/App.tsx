@@ -17,6 +17,31 @@ import {
   RefreshCw
 } from 'lucide-react';
 
+function AvatarImage({ user, className }: { user: UserProfile; className: string }) {
+  const [imageError, setImageError] = useState(false);
+  const nameLetter = user.name ? user.name.trim().charAt(0).toUpperCase() : 'U';
+  const hasValidAvatar = user.avatarUrl && 
+    (user.avatarUrl.startsWith('http://') || user.avatarUrl.startsWith('https://')) && 
+    !imageError;
+
+  if (hasValidAvatar) {
+    return (
+      <img
+        className={`${className} rounded-full object-cover`}
+        alt="User profile avatar"
+        src={user.avatarUrl}
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${className} bg-[#0a1128] text-white font-sans font-black rounded-full flex items-center justify-center select-none uppercase tracking-tight`}>
+      {nameLetter}
+    </div>
+  );
+}
+
 export default function App() {
   // Persistence state
   const [items, setItems] = useState<FoundItem[]>(() => {
@@ -42,6 +67,12 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'welcome' | 'home' | 'search' | 'report' | 'rewards' | 'admin'>('welcome');
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+    const saved = localStorage.getItem('findback_isAdminLoggedIn');
+    return saved === 'true';
+  });
+
+  const isProd = typeof import.meta !== 'undefined' && (import.meta as any).env ? !!(import.meta as any).env.PROD : false;
 
   useEffect(() => {
     const handleResize = () => {
@@ -60,6 +91,10 @@ export default function App() {
     localStorage.setItem('findback_user', JSON.stringify(user));
   }, [user]);
 
+  useEffect(() => {
+    localStorage.setItem('findback_isAdminLoggedIn', String(isAdminLoggedIn));
+  }, [isAdminLoggedIn]);
+
   // Show dynamic banner notifications
   const showBanner = (msg: string) => {
     setNotificationMsg(msg);
@@ -70,6 +105,7 @@ export default function App() {
 
   // Onboarding Login entry callback
   const handleLogin = (name: string, email: string, phone: string) => {
+    setIsAdminLoggedIn(false);
     setUser((prev) => ({
       ...prev,
       name,
@@ -78,8 +114,23 @@ export default function App() {
     }));
   };
 
+  const handleAdminLogin = (name: string, email: string) => {
+    setIsAdminLoggedIn(true);
+    setUser((prev) => ({
+      ...prev,
+      name,
+      email,
+      phone: 'Admin Operator',
+      avatarUrl: '' // Reset to empty to trigger dynamic fallback letter avatar!
+    }));
+    setActiveRole('admin');
+    setCurrentScreen('admin');
+    showBanner(`Logged in successfully as Administrator ${name}`);
+  };
+
   // Onboarding role selection callback
   const handleStartFlow = (role: 'finder' | 'owner') => {
+    setIsAdminLoggedIn(false);
     setActiveRole(role);
     if (role === 'finder') {
       setCurrentScreen('report');
@@ -184,6 +235,7 @@ export default function App() {
   const handleResetDemo = () => {
     localStorage.removeItem('findback_items');
     localStorage.removeItem('findback_user');
+    localStorage.removeItem('findback_isAdminLoggedIn');
     window.location.reload();
   };
 
@@ -224,12 +276,8 @@ export default function App() {
               {/* Sophisticated Google User Session Profile Banner */}
               <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800/80 flex flex-col items-center text-center space-y-3 shadow-inner">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-amber-400 relative shadow-lg">
-                    <img
-                      className="w-full h-full object-cover"
-                      alt="Authenticated Google Session Portrait"
-                      src={user.avatarUrl}
-                    />
+                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-amber-400 relative shadow-lg flex items-center justify-center">
+                    <AvatarImage user={user} className="w-full h-full text-xl" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-4 h-4 rounded-full border-2 border-slate-900 flex items-center justify-center">
                     <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
@@ -308,54 +356,58 @@ export default function App() {
                     <span>My Rewards</span>
                   </button>
 
-                  <button
-                    onClick={() => setCurrentScreen('admin')}
-                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
-                      currentScreen === 'admin'
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <Sliders className={`w-4 h-4 ${currentScreen === 'admin' ? 'text-white' : 'text-slate-400'}`} />
-                    <span>Hub Operator Console</span>
-                  </button>
+                  {isAdminLoggedIn && activeRole === 'admin' && (
+                    <button
+                      onClick={() => setCurrentScreen('admin')}
+                      className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                        currentScreen === 'admin'
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <Sliders className={`w-4 h-4 ${currentScreen === 'admin' ? 'text-white' : 'text-slate-400'}`} />
+                      <span>Hub Operator Console</span>
+                    </button>
+                  )}
                 </nav>
               )}
             </div>
 
             {/* Sidebar Bottom Controls & PERSPECTIVE SWITCHER */}
             <div className="space-y-4">
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
-                <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                  <Sliders className="w-3.5 h-3.5" />
-                  PERSPECTIVE SIMULATOR
-                </span>
-                <div className="grid grid-cols-3 gap-1 bg-slate-900 rounded p-0.5 border border-slate-800">
-                  {(['owner', 'finder', 'admin'] as const).map((role) => (
-                    <button
-                      key={role}
-                      onClick={() => {
-                        setActiveRole(role);
-                        if (currentScreen === 'welcome') {
-                          setCurrentScreen('home');
-                        } else if (role === 'admin') {
-                          setCurrentScreen('admin');
-                        } else if (role === 'finder') {
-                          setCurrentScreen('report');
-                        } else {
-                          setCurrentScreen('home');
-                        }
-                        showBanner(`Switched to "${role.toUpperCase()}" workflow perspective.`);
-                      }}
-                      className={`px-1.5 py-1 rounded-[6px] text-[8px] uppercase font-black tracking-tight text-center transition-all cursor-pointer ${
-                        activeRole === role ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  ))}
+              {!isProd && (
+                <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
+                  <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                    <Sliders className="w-3.5 h-3.5" />
+                    PERSPECTIVE SIMULATOR
+                  </span>
+                  <div className={`grid ${isAdminLoggedIn ? 'grid-cols-3' : 'grid-cols-2'} gap-1 bg-slate-900 rounded p-0.5 border border-slate-800`}>
+                    {((isAdminLoggedIn ? ['owner', 'finder', 'admin'] : ['owner', 'finder']) as ('owner' | 'finder' | 'admin')[]).map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => {
+                          setActiveRole(role);
+                          if (currentScreen === 'welcome') {
+                            setCurrentScreen('home');
+                          } else if (role === 'admin') {
+                            setCurrentScreen('admin');
+                          } else if (role === 'finder') {
+                            setCurrentScreen('report');
+                          } else {
+                            setCurrentScreen('home');
+                          }
+                          showBanner(`Switched to "${role.toUpperCase()}" workflow perspective.`);
+                        }}
+                        className={`px-1.5 py-1 rounded-[6px] text-[8px] uppercase font-black tracking-tight text-center transition-all cursor-pointer ${
+                          activeRole === role ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {role}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Diagnostic Footer */}
               <div className="pt-2 border-t border-slate-800 space-y-2">
@@ -418,6 +470,7 @@ export default function App() {
                   <WelcomeScreen
                     onStartFlow={handleStartFlow}
                     onLogin={handleLogin}
+                    onAdminLogin={handleAdminLogin}
                   />
                 </div>
               )}
@@ -651,37 +704,39 @@ export default function App() {
         <div className="w-full max-w-[480px] h-screen bg-slate-50 flex flex-col shadow-2xl relative border-x border-slate-800 overflow-hidden mx-auto">
           
           {/* Onboarding Mode Switcher for easily testing perspectives */}
-          <div className="bg-slate-900 text-slate-300 px-3 py-2 flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase border-b-2 border-slate-800 shrink-0 select-none z-50">
-            <span className="text-amber-400 flex items-center gap-1 font-display">
-              <Sliders className="w-3 h-3" />
-              Role:
-            </span>
-            <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700">
-              {(['owner', 'finder', 'admin'] as const).map((role) => (
-                <button
-                  key={role}
-                  onClick={() => {
-                    setActiveRole(role);
-                    if (currentScreen === 'welcome') {
-                      setCurrentScreen('home');
-                    } else if (role === 'admin') {
-                      setCurrentScreen('admin');
-                    } else if (role === 'finder') {
-                      setCurrentScreen('report');
-                    } else {
-                      setCurrentScreen('home');
-                    }
-                    showBanner(`Switched view to "${role.toUpperCase()}".`);
-                  }}
-                  className={`px-2 py-0.5 rounded text-[8px] uppercase font-bold transition-all cursor-pointer ${
-                    activeRole === role ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {role}
-                </button>
-              ))}
+          {!isProd && (
+            <div className="bg-slate-900 text-slate-300 px-3 py-2 flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase border-b-2 border-slate-800 shrink-0 select-none z-50">
+              <span className="text-amber-400 flex items-center gap-1 font-display">
+                <Sliders className="w-3 h-3" />
+                Role:
+              </span>
+              <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700">
+                {((isAdminLoggedIn ? ['owner', 'finder', 'admin'] : ['owner', 'finder']) as ('owner' | 'finder' | 'admin')[]).map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => {
+                      setActiveRole(role);
+                      if (currentScreen === 'welcome') {
+                        setCurrentScreen('home');
+                      } else if (role === 'admin') {
+                        setCurrentScreen('admin');
+                      } else if (role === 'finder') {
+                        setCurrentScreen('report');
+                      } else {
+                        setCurrentScreen('home');
+                      }
+                      showBanner(`Switched view to "${role.toUpperCase()}".`);
+                    }}
+                    className={`px-2 py-0.5 rounded text-[8px] uppercase font-bold transition-all cursor-pointer ${
+                      activeRole === role ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Sticky Header Top App Bar */}
           {currentScreen !== 'welcome' && (
@@ -702,12 +757,8 @@ export default function App() {
                   <Bell className="w-4.5 h-4.5" />
                   <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
                 </button>
-                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400 relative shrink-0">
-                  <img
-                    className="w-full h-full object-cover"
-                    alt="Logged-in Google session avatar"
-                    src={user.avatarUrl}
-                  />
+                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400 relative shrink-0 flex items-center justify-center">
+                  <AvatarImage user={user} className="w-full h-full text-xs" />
                 </div>
               </div>
             </header>
@@ -720,6 +771,7 @@ export default function App() {
               <WelcomeScreen
                 onStartFlow={handleStartFlow}
                 onLogin={handleLogin}
+                onAdminLogin={handleAdminLogin}
               />
             )}
 
@@ -730,7 +782,9 @@ export default function App() {
                 <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between shadow-md select-none">
                   <div className="flex items-center gap-2.5">
                     <div className="relative">
-                      <img src={user.avatarUrl} className="w-10 h-10 rounded-full object-cover border border-cyan-400" alt="Avatar" />
+                      <div className="w-10 h-10 rounded-full overflow-hidden border border-cyan-400 flex items-center justify-center">
+                        <AvatarImage user={user} className="w-full h-full text-sm" />
+                      </div>
                       <div className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-slate-900"></div>
                     </div>
                     <div>

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { HelpingHand, Search, Eye, RefreshCw, Loader2, CheckCircle2, User, Mail, Phone, Database } from 'lucide-react';
+import { HelpingHand, Search, Eye, RefreshCw, Loader2, CheckCircle2, User, Mail, Phone, Database, Sliders, Lock, ArrowLeft } from 'lucide-react';
 import { dbService } from '../services/dbService';
 
 interface WelcomeScreenProps {
   onStartFlow: (role: 'finder' | 'owner') => void;
   onLogin: (name: string, email: string, phone: string) => void;
+  onAdminLogin?: (name: string, email: string) => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLogin }) => {
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLogin, onAdminLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -15,6 +16,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
   const [selectedRole, setSelectedRole] = useState<'finder' | 'owner' | null>(null);
   const [error, setError] = useState('');
   
+  // Admin login states
+  const [showAdminStepUp, setShowAdminStepUp] = useState(false);
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminError, setAdminError] = useState('');
+
   // Loading & Modal States
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -157,6 +164,110 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
     setSelectedRole(role);
     setError('');
   };
+
+  if (showAdminStepUp) {
+    return (
+      <div id="welcome-screen" className="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden my-6 relative font-sans animate-fade-in">
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900"></div>
+        <div className="p-8 flex flex-col items-center">
+          {/* Logo Section */}
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <div className="w-20 h-20 bg-gradient-to-b from-slate-950 to-slate-900 rounded-2xl flex items-center justify-center shadow-lg border border-slate-800 relative overflow-hidden">
+              <div className="absolute inset-1.5 rounded-full border border-slate-700/50 flex items-center justify-center">
+                <Lock className="w-9 h-9 text-cyan-400 filter drop-shadow-[0_0_3px_rgba(34,211,238,0.8)] animate-pulse" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-black tracking-widest text-slate-900 uppercase font-display">Staff Login</h1>
+          </div>
+
+          {/* Admin Headline */}
+          <div className="text-center mb-6">
+            <h2 className="text-sm font-black text-slate-800 uppercase flex items-center justify-center gap-1.5">
+              <span className="w-1.5 h-4 bg-blue-900 inline-block"></span>
+              Administrative Portal
+            </h2>
+            <p className="text-[11px] text-slate-500 mt-2 tracking-wide font-semibold">
+              STAFF ONLY - ENTER OPERATOR CREDENTIALS TO BYPASS CITIZEN REGISTRATION.
+            </p>
+          </div>
+
+          {/* Admin Error Message */}
+          {adminError && (
+            <div className="w-full bg-red-50 text-red-700 border border-red-200 p-3.5 rounded-xl text-xs font-bold mb-4 text-center uppercase tracking-wider">
+              {adminError}
+            </div>
+          )}
+
+          {/* Admin Form */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (adminUsername === 'Sanjeev_200' && adminPassword === 'sanjeev@866') {
+                if (onAdminLogin) {
+                  onAdminLogin('Sanjeev', 'iamheresanjeev@gmail.com');
+                } else {
+                  onLogin('Sanjeev', 'iamheresanjeev@gmail.com', 'Admin Operator');
+                  onStartFlow('owner');
+                }
+              } else {
+                setAdminError('Access Denied: Invalid Username or Password.');
+              }
+            }}
+            className="w-full space-y-4"
+          >
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
+                <User className="w-3.5 h-3.5 text-blue-950" /> Admin Username / ID
+              </label>
+              <input
+                type="text"
+                required
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                placeholder="e.g. Sanjeev_200"
+                className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 bg-white transition-all font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
+                <Lock className="w-3.5 h-3.5 text-blue-950" /> Access Password
+              </label>
+              <input
+                type="password"
+                required
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 bg-white transition-all font-mono"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-slate-900 hover:bg-slate-950 text-white font-extrabold py-4 rounded-xl shadow-lg uppercase tracking-widest text-xs transition-all cursor-pointer mt-6 flex items-center justify-center gap-2 border border-slate-800"
+            >
+              Verify Administrative Access
+            </button>
+          </form>
+
+          {/* Back to Citizen Access */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowAdminStepUp(false);
+              setAdminUsername('');
+              setAdminPassword('');
+              setAdminError('');
+            }}
+            className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors mt-6 flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
+          >
+            <ArrowLeft className="w-4 h-4" /> Return to Citizen Entrance
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="welcome-screen" className="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden my-6 relative">
@@ -344,6 +455,21 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
           >
             Or Instant Bypass (Mock Citizen)
           </button>
+
+          <div className="w-full flex justify-center mt-3 border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAdminStepUp(true);
+                setAdminError('');
+                setAdminUsername('');
+                setAdminPassword('');
+              }}
+              className="text-[10px] font-black text-blue-900 hover:text-blue-950 transition-colors uppercase tracking-widest flex items-center gap-1 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-lg px-4 py-2 cursor-pointer shadow-sm"
+            >
+              <Sliders className="w-3.5 h-3.5 text-blue-900" /> Admin Portal
+            </button>
+          </div>
         </div>
 
         {/* Footer info */}
