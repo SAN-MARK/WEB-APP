@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FoundItem, ItemCategory, RecoveryHub } from '../types';
+import { FoundItem, ItemCategory, RecoveryHub, UserProfile } from '../types';
 import { CHENNAI_HUBS } from './MockData';
 import {
   ArrowLeft,
@@ -25,9 +25,10 @@ import { QRScanner } from './QRScanner';
 interface FinderFlowProps {
   onItemCreated: (newItem: FoundItem) => void;
   onNavigateHome: () => void;
+  currentUser?: UserProfile;
 }
 
-export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigateHome }) => {
+export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigateHome, currentUser }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [category, setCategory] = useState<ItemCategory>('Wallet');
   const [mockPhoto, setMockPhoto] = useState<string>('');
@@ -37,6 +38,27 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
   const [assignedHub, setAssignedHub] = useState<RecoveryHub>(CHENNAI_HUBS[1]); // default T. Nagar
   const [generatedId, setGeneratedId] = useState<string>('FB-882-9910');
   
+  const [finderName, setFinderName] = useState(currentUser?.name || 'Rahul Sharma');
+  const [finderEmail, setFinderEmail] = useState(currentUser?.email || 'rahul.sharma@gmail.com');
+  const [finderPhone, setFinderPhone] = useState(currentUser?.phone || '+91 98765 43210');
+  const [foundDate, setFoundDate] = useState(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  });
+
+  React.useEffect(() => {
+    if (currentUser) {
+      setFinderName(currentUser.name);
+      setFinderEmail(currentUser.email);
+      if (currentUser.phone) {
+        setFinderPhone(currentUser.phone);
+      }
+    }
+  }, [currentUser]);
+
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -178,8 +200,8 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
       clearImg: mockPhoto || PRESET_PHOTOS[category].clear,
       submissionId: subId,
       description,
-      reporterName: 'Rahul Sharma',
-      reporterEmail: 'rahul.sharma@gmail.com',
+      reporterName: finderName,
+      reporterEmail: finderEmail,
       rewardAmount: 60,
       serviceFee: 200,
       hasPaidEscrow: false
@@ -188,13 +210,19 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
     setIsLoading(true);
 
     try {
-      // Send file submission info to Sheet.best
-      await dbService.recordFileSubmission({
+      // Send found item submission info to the new Sheet.best Found Items endpoint
+      await dbService.submitFoundItem({
         Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-        Type: 'Finder',
+        FinderName: finderName,
+        FinderEmail: finderEmail,
+        FinderPhone: finderPhone,
+        ItemCategory: category,
         ItemDescription: description,
-        HubLocation: assignedHub.name,
-        FileName: mockPhotoName || 'camera_capture_landmark.jpg'
+        LossLocation: location,
+        FoundDate: foundDate,
+        StorageHub: assignedHub.name,
+        Status: 'Found',
+        ImageReference: mockPhotoName || 'camera_capture_landmark.jpg'
       });
 
       setIsLoading(false);
@@ -429,6 +457,61 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
                     <Compass className="w-3.5 h-3.5 text-blue-600" />
                     Detect Chennai Location
                   </button>
+                </div>
+
+                {/* Finder & Context details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Finder's Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={finderName}
+                      onChange={(e) => setFinderName(e.target.value)}
+                      className="w-full p-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Finder's Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={finderEmail}
+                      onChange={(e) => setFinderEmail(e.target.value)}
+                      className="w-full p-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Finder's Phone Contact
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={finderPhone}
+                      onChange={(e) => setFinderPhone(e.target.value)}
+                      className="w-full p-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Found Date
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={foundDate}
+                      onChange={(e) => setFoundDate(e.target.value)}
+                      className="w-full p-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all font-mono"
+                    />
+                  </div>
                 </div>
 
                 {/* Automatic Hub Mapping preview if location detected */}

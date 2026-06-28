@@ -5,6 +5,9 @@
 
 const BASE_URL = 'https://api.sheetbest.com/sheets/93812d90-9938-4f16-acd9-09b79ed50388';
 
+const FOUND_ITEMS_URL = 'https://api.sheetbest.com/sheets/81694254-e251-4c0b-8e36-245d7f2affab';
+const IDENTITY_VERIFICATION_URL = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
+
 export interface UserLoginPayload {
   Timestamp: string;
   Name: string;
@@ -20,13 +23,38 @@ export interface FileSubmissionPayload {
   FileName: string;
 }
 
+export interface FoundItemSubmissionPayload {
+  Timestamp: string;
+  FinderName: string;
+  FinderEmail: string;
+  FinderPhone: string;
+  ItemCategory: string;
+  ItemDescription: string;
+  LossLocation: string;
+  FoundDate: string;
+  StorageHub: string;
+  Status: string;
+  ImageReference: string;
+}
+
+export interface IdentityVerificationPayload {
+  Timestamp: string;
+  UserEmail: string;
+  FullName: string;
+  IDType: string;
+  IDNumber: string;
+  VerificationStatus: string;
+  ReviewNotes: string;
+  DocumentLink: string;
+}
+
 export const dbService = {
   /**
    * Records a user registration or login in the 'Users' tab
    */
   async recordUserLogin(payload: UserLoginPayload): Promise<boolean> {
     try {
-      console.log('Sending user login record to Sheet.best:', payload);
+      console.log('Sending user login record to Sheet.best Users tab:', payload);
       const response = await fetch(`${BASE_URL}/tabs/Users`, {
         method: 'POST',
         headers: {
@@ -52,13 +80,13 @@ export const dbService = {
       }
     } catch (error) {
       console.error('Failed to submit user login to Sheet.best:', error);
-      // We will return true to proceed gracefully in case of offline/network blockages
+      // We will return false to proceed gracefully in case of offline/network blockages
       return false;
     }
   },
 
   /**
-   * Records a finder item photo upload or owner proof document in the 'Submissions' tab
+   * Records a finder item photo upload or owner proof document in the 'Submissions' tab (legacy/optional fallback)
    */
   async recordFileSubmission(payload: FileSubmissionPayload): Promise<boolean> {
     try {
@@ -76,7 +104,6 @@ export const dbService = {
         return true;
       } else {
         console.warn('Sheet.best response not OK, attempting fallback directly to main endpoint...', response.status);
-        // Fallback to main sheet just in case tabs are not configured
         const fallbackRes = await fetch(BASE_URL, {
           method: 'POST',
           headers: {
@@ -90,5 +117,60 @@ export const dbService = {
       console.error('Failed to submit file record to Sheet.best:', error);
       return false;
     }
+  },
+
+  /**
+   * Submits a newly reported found item to the dedicated Found Items Sheet.best endpoint
+   */
+  async submitFoundItem(payload: FoundItemSubmissionPayload): Promise<boolean> {
+    try {
+      console.log('Submitting found item report directly to live Sheet.best endpoint:', payload);
+      const response = await fetch(FOUND_ITEMS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        console.log('Successfully logged found item report on live Sheet.best endpoint!');
+        return true;
+      } else {
+        console.warn('Found item endpoint responded with non-OK status:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to communicate with live Found Items Sheet.best endpoint:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Submits identity verification to the dedicated Identity Verification Sheet.best endpoint
+   */
+  async submitIdentityVerification(payload: IdentityVerificationPayload): Promise<boolean> {
+    try {
+      console.log('Submitting identity verification directly to live Sheet.best endpoint:', payload);
+      const response = await fetch(IDENTITY_VERIFICATION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        console.log('Successfully logged identity verification on live Sheet.best endpoint!');
+        return true;
+      } else {
+        console.warn('Identity verification endpoint responded with non-OK status:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to communicate with live Identity Verification Sheet.best endpoint:', error);
+      return false;
+    }
   }
 };
+

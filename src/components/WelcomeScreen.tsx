@@ -4,7 +4,7 @@ import { dbService } from '../services/dbService';
 
 interface WelcomeScreenProps {
   onStartFlow: (role: 'finder' | 'owner') => void;
-  onLogin: (email: string) => void;
+  onLogin: (name: string, email: string, phone: string) => void;
 }
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLogin }) => {
@@ -149,7 +149,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
 
   const handleModalConfirm = () => {
     setShowSuccessModal(false);
-    onLogin(email || 'chennai.citizen@gmail.com');
+    onLogin(name || 'Chennai Citizen', email || 'chennai.citizen@gmail.com', phone || '+91 99999 99999');
     onStartFlow(selectedRole || 'owner');
   };
 
@@ -331,10 +331,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
             disabled={isLoading}
             onClick={() => {
               // Quick fallback pass in case of offline/local testing
-              setName('Chennai Citizen');
-              setEmail('chennai.citizen@gmail.com');
-              setPhone('+91 99999 99999');
-              onLogin('chennai.citizen@gmail.com');
+              const defaultName = 'Chennai Citizen';
+              const defaultEmail = 'chennai.citizen@gmail.com';
+              const defaultPhone = '+91 99999 99999';
+              setName(defaultName);
+              setEmail(defaultEmail);
+              setPhone(defaultPhone);
+              onLogin(defaultName, defaultEmail, defaultPhone);
               onStartFlow(selectedRole || 'owner');
             }}
             className="text-[10px] font-bold text-slate-400 hover:text-blue-900 uppercase tracking-widest transition-colors mt-1"
@@ -351,7 +354,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
             onClick={(e) => {
               e.preventDefault();
               setSelectedRole('owner');
-              onLogin('new.chennaite@gmail.com');
+              onLogin('New Chennaite', 'new.chennaite@gmail.com', '+91 88888 88888');
               onStartFlow('owner');
             }}
             className="font-bold text-blue-600 hover:underline"

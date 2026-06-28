@@ -46,4 +46,5 @@ export interface UserProfile {
   balance: number; // accumulated micro-rewards
   reportedCount: number;
   claimedCount: number;
+  phone?: string;
 }

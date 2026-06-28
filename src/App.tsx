@@ -69,11 +69,12 @@ export default function App() {
   };
 
   // Onboarding Login entry callback
-  const handleLogin = (email: string) => {
+  const handleLogin = (name: string, email: string, phone: string) => {
     setUser((prev) => ({
       ...prev,
+      name,
       email,
-      name: email.split('@')[0].split('.').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      phone
     }));
   };
 
@@ -469,6 +470,7 @@ export default function App() {
                             onClaimSubmitted={handleClaimSubmitted}
                             onSimulateApproveClaim={handleApproveProof}
                             onSimulatePayment={handleSettleUPI}
+                            currentUser={user}
                             onlyShowMap={true}
                           />
                         </div>
@@ -554,6 +556,7 @@ export default function App() {
                     onClaimSubmitted={handleClaimSubmitted}
                     onSimulateApproveClaim={handleApproveProof}
                     onSimulatePayment={handleSettleUPI}
+                    currentUser={user}
                   />
                 </div>
               )}
@@ -563,6 +566,7 @@ export default function App() {
                   <FinderFlow
                     onItemCreated={handleItemCreated}
                     onNavigateHome={() => setCurrentScreen('home')}
+                    currentUser={user}
                   />
                 </div>
               )}
@@ -775,6 +779,7 @@ export default function App() {
                       onClaimSubmitted={handleClaimSubmitted}
                       onSimulateApproveClaim={handleApproveProof}
                       onSimulatePayment={handleSettleUPI}
+                      currentUser={user}
                       onlyShowMap={true}
                     />
                   </div>
@@ -825,6 +830,7 @@ export default function App() {
                 onClaimSubmitted={handleClaimSubmitted}
                 onSimulateApproveClaim={handleApproveProof}
                 onSimulatePayment={handleSettleUPI}
+                currentUser={user}
               />
             )}
 
@@ -832,6 +838,7 @@ export default function App() {
               <FinderFlow
                 onItemCreated={handleItemCreated}
                 onNavigateHome={() => setCurrentScreen('home')}
+                currentUser={user}
               />
             )}
 
