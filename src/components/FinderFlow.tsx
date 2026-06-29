@@ -182,10 +182,6 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
     e.preventDefault();
     if (!description || !location) return;
 
-    // Calculate Reward Amount and Service Fee (30%)
-    const rewardVal = Number(rewardAmountInput) || 0;
-    const calculatedFee = Math.round(rewardVal * 0.3);
-
     // Map a submission id
     const randNum1 = Math.floor(100 + Math.random() * 900);
     const randNum2 = Math.floor(1000 + Math.random() * 9000);
@@ -200,22 +196,22 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
       location: assignedHub.name,
       date: 'Just now',
       hubId: assignedHub.id,
-      status: 'Found',
+      status: 'Pending Valuation',
       blurImg: mockPhoto || 'https://lh3.googleusercontent.com/aida-public/AB6AXuC0vaabrFIVpkb0hl-Y02m8D2jBnEz6loFtLB2XdkMf22vPKh8MYjP48NHimS377cQlguFvOkCCfKjRuKKx-MHH4BvAwGkRRmhyxUfL3EckE5yM9d3oldCISh9RoRXoKlSWxI0sTvmgZMBn8vVLIfMHZZle5TkoXQdmTypj8pS6zOL8TGohTC-Yl6YKPfrvvrxhEpWhhH8iqxEJngiMieaIUxG5637Wk8U1X65l7fuCfF9vyQK81s1mGKo5x84m8vCJxeVOBHuoBn6V',
       clearImg: mockPhoto || PRESET_PHOTOS[category].clear,
       submissionId: subId,
       description,
       reporterName: finderName,
       reporterEmail: finderEmail,
-      rewardAmount: rewardVal,
-      serviceFee: calculatedFee,
+      rewardAmount: 0,
+      serviceFee: 0,
       hasPaidEscrow: false
     };
 
     setIsLoading(true);
 
     try {
-      // Send found item submission info to the new Sheet.best Found Items endpoint
+      // Send found item submission info directly to Sheet.best Found Items endpoint with status 'Pending Valuation'
       await dbService.submitFoundItem({
         Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         FinderName: finderName,
@@ -226,20 +222,21 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
         LossLocation: location,
         FoundDate: foundDate,
         StorageHub: assignedHub.name,
-        Status: 'Available', // Default to "Available" as requested
+        Status: 'Pending Valuation',
         ImageReference: mockPhotoName || 'camera_capture_landmark.jpg',
         "Item Name": `${category} found at ${location.split(',')[0]}`,
         "Location": assignedHub.name,
         "Description": description,
         "Date Found": foundDate,
-        RewardAmount: rewardVal,
-        ServiceFee: calculatedFee
+        RewardAmount: 0,
+        ServiceFee: 0
       });
 
       setIsLoading(false);
       setPendingItem(newItem);
       setShowSuccessModal(true);
     } catch (err) {
+      console.error('[API Permission Debug] Error in submitFoundItem:', err);
       setIsLoading(false);
       setPendingItem(newItem);
       setShowSuccessModal(true); // Proceed anyway for resilient UX
@@ -522,29 +519,6 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
                       onChange={(e) => setFoundDate(e.target.value)}
                       className="w-full p-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all font-mono"
                     />
-                  </div>
-
-                  <div className="space-y-1.5 col-span-1 sm:col-span-2 border-t border-slate-100 pt-3">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Estimated Value or Reward Amount (₹)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-3.5 text-slate-500 text-sm font-bold">₹</span>
-                      <input
-                        type="number"
-                        min="0"
-                        required
-                        value={rewardAmountInput}
-                        onChange={(e) => setRewardAmountInput(e.target.value)}
-                        placeholder="e.g. 500"
-                        className="w-full pl-7 pr-3 py-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all font-mono font-bold text-slate-800"
-                      />
-                    </div>
-                    {rewardAmountInput && (
-                      <p className="text-[10px] text-blue-600 font-extrabold uppercase tracking-wide">
-                        ✓ Calculated 30% platform service fee: ₹{Math.round(Number(rewardAmountInput) * 0.3)}
-                      </p>
-                    )}
                   </div>
                 </div>
 

@@ -15,7 +15,8 @@ import {
   Hourglass,
   Calendar,
   Loader2,
-  Database
+  Database,
+  Star
 } from 'lucide-react';
 import { dbService } from '../services/dbService';
 import { InteractiveMap } from './InteractiveMap';
@@ -850,6 +851,34 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {claimingItem.status === 'Awaiting Approval' && (
+                  <div className="p-4 bg-amber-50 border-2 border-amber-400 rounded-xl space-y-3.5 text-left shadow-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-amber-100 rounded-lg text-amber-700 shrink-0">
+                        <Star className="w-5 h-5 text-amber-600 fill-amber-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-display font-black text-xs uppercase tracking-wide text-amber-950">
+                          Verified Match Found
+                        </h4>
+                        <p className="text-[10px] text-amber-900 leading-relaxed font-semibold uppercase tracking-wider mt-1">
+                          To proceed with recovery, please pay the platform service fee: ₹{claimingItem.serviceFee || 150}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border border-amber-200/80 space-y-1">
+                      <div className="flex justify-between text-xs font-mono font-bold text-slate-700">
+                        <span>Platform Escrow Fee:</span>
+                        <span>₹{claimingItem.serviceFee || 150}</span>
+                      </div>
+                      <div className="flex justify-between text-[9px] uppercase tracking-wider text-slate-400 font-bold pt-1 border-t border-slate-100">
+                        <span>Estimated Finder Payout:</span>
+                        <span>₹{Math.round((claimingItem.serviceFee || 150) * 0.7)} (70%)</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* WhatsApp Update */}
                 <button

@@ -5,6 +5,7 @@ import { WelcomeScreen } from './components/WelcomeScreen';
 import { FinderFlow } from './components/FinderFlow';
 import { SearchDashboard } from './components/SearchDashboard';
 import { AdminHub } from './components/AdminHub';
+import { NotificationDrawer } from './components/NotificationDrawer';
 import { NotificationController } from './components/NotificationController';
 import { HomeDashboard } from './components/HomeDashboard';
 import { AccountSettings } from './components/AccountSettings';
@@ -21,28 +22,13 @@ import {
   RefreshCw,
   TrendingUp,
   UserCircle,
-  Settings
+  Settings,
+  User
 } from 'lucide-react';
 
 function AvatarImage({ user, className }: { user: UserProfile; className: string }) {
-  const [imageError, setImageError] = useState(false);
-  const hasValidAvatar = user.avatarUrl && 
-    (user.avatarUrl.startsWith('http://') || user.avatarUrl.startsWith('https://') || user.avatarUrl.startsWith('data:image/')) && 
-    !imageError;
-
-  if (hasValidAvatar) {
-    return (
-      <img
-        className={`${className} rounded-full object-cover`}
-        alt="User profile avatar"
-        src={user.avatarUrl}
-        onError={() => setImageError(true)}
-      />
-    );
-  }
-
   return (
-    <UserCircle className={`${className} text-slate-400 bg-slate-900 rounded-full p-0.5`} />
+    <User className={`${className} text-slate-300 bg-slate-950 p-2`} />
   );
 }
 
@@ -245,6 +231,47 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('findback_isAdminLoggedIn', String(isAdminLoggedIn));
   }, [isAdminLoggedIn]);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
+
+  const refreshUnreadCount = async () => {
+    if (!user || !user.email) return;
+    try {
+      const liveData = await apiRouter.fetchNotifications();
+      const localStored = localStorage.getItem('findback_notifications_local');
+      const localList = localStored ? JSON.parse(localStored) : [];
+      const combined = [...liveData, ...localList];
+      const userEmailLower = user.email.toLowerCase().trim();
+      const filtered = combined.filter(n => {
+        if (!n.UserID) return false;
+        const uid = n.UserID.toLowerCase().trim();
+        return uid === userEmailLower || uid === 'all';
+      });
+      // Deduplicate
+      const seen = new Set<string>();
+      const deduped = [];
+      for (const item of filtered) {
+        const key = `${item.Message}_${item.Timestamp}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          deduped.push(item);
+        }
+      }
+      const count = deduped.filter(n => n.ReadStatus === 'false' || !n.ReadStatus || n.ReadStatus === false).length;
+      setUnreadCount(count);
+    } catch (e) {
+      console.warn('[API Warning] refreshUnreadCount error:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (user && user.email) {
+      refreshUnreadCount();
+      const interval = setInterval(refreshUnreadCount, 15000); // Check every 15 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   // Sum up pending service fees for items reported by this user that are not yet claimed
   const pendingServiceFeeTotal = items
@@ -622,11 +649,13 @@ export default function App() {
                   <p className="text-sm font-black text-emerald-600 font-mono">₹{user.balance}</p>
                 </div>
                 <button
-                  onClick={() => alert('Civic broadcast alerts: Chennai Lost & Found dispatch active active.')}
+                  onClick={() => setIsNotificationDrawerOpen(true)}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl relative cursor-pointer"
                 >
                   <Bell className="w-4.5 h-4.5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full border border-white"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-600 rounded-full border border-white animate-pulse"></span>
+                  )}
                 </button>
               </div>
             </header>
@@ -835,11 +864,13 @@ export default function App() {
               {/* Dynamic Google User Session Portrait */}
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => alert('Civic broadcast alerts: Chennai Lost & Found dispatch active.')}
+                  onClick={() => setIsNotificationDrawerOpen(true)}
                   className="text-white p-1 hover:bg-blue-800 rounded relative cursor-pointer"
                 >
                   <Bell className="w-4.5 h-4.5" />
-                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  )}
                 </button>
                 <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400 relative shrink-0 flex items-center justify-center">
                   <AvatarImage user={user} className="w-full h-full text-xs" />
@@ -1052,6 +1083,19 @@ export default function App() {
               </button>
             </nav>
           )}
+
+          <NotificationDrawer
+            isOpen={isNotificationDrawerOpen}
+            onClose={() => {
+              setIsNotificationDrawerOpen(false);
+              refreshUnreadCount();
+            }}
+            currentUser={user}
+            onNavigateToItem={(itemId) => {
+              setCurrentScreen('search');
+              showBanner(`Navigated to detail for item: ${itemId}`);
+            }}
+          />
 
         </div>
       )}
