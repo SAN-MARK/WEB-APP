@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { FoundItem, ItemCategory, RecoveryHub, UserProfile } from '../types';
 import { CHENNAI_HUBS } from './MockData';
 import {
@@ -21,6 +23,103 @@ import {
 } from 'lucide-react';
 import { dbService } from '../services/dbService';
 import { QRScanner } from './QRScanner';
+
+const getFoundLocationCoords = (locStr: string): [number, number] => {
+  const normalized = (locStr || '').toLowerCase();
+  if (normalized.includes('adyar')) return [13.0033, 80.2550];
+  if (normalized.includes('tnagar') || normalized.includes('t. nagar') || normalized.includes('pondy')) return [13.0405, 80.2337];
+  if (normalized.includes('anna nagar')) return [13.0850, 80.2101];
+  if (normalized.includes('velachery') || normalized.includes('phoenix')) return [12.9801, 80.2228];
+  if (normalized.includes('central') || normalized.includes('railway')) return [13.0827, 80.2707];
+  if (normalized.includes('marina') || normalized.includes('beach') || normalized.includes('lighthouse')) return [13.0392, 80.2785];
+  return [13.045, 80.24]; // default Chennai coordinates
+};
+
+const MiniHubMap: React.FC<{ hub: RecoveryHub; foundLocation: string }> = ({ hub, foundLocation }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+
+    const hubCoords: [number, number] = [hub.latitude || 13.045, hub.longitude || 80.24];
+    const itemCoords = getFoundLocationCoords(foundLocation);
+
+    const map = L.map(containerRef.current, {
+      center: hubCoords,
+      zoom: 12,
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18
+    }).addTo(map);
+
+    const hubIcon = L.divIcon({
+      html: `
+        <div class="relative flex items-center justify-center">
+          <div class="absolute w-6 h-6 bg-blue-500/30 rounded-full animate-ping pointer-events-none"></div>
+          <div class="w-4 h-4 rounded-full bg-blue-900 border border-cyan-400 flex items-center justify-center shadow-md">
+            <span class="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
+          </div>
+        </div>
+      `,
+      className: 'mini-hub-marker',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+
+    const itemIcon = L.divIcon({
+      html: `
+        <div class="relative flex items-center justify-center">
+          <div class="w-4 h-4 rounded-full bg-red-600 border border-white flex items-center justify-center shadow-md">
+            <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
+          </div>
+        </div>
+      `,
+      className: 'mini-item-marker',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+
+    const hMarker = L.marker(hubCoords, { icon: hubIcon }).addTo(map)
+      .bindPopup(`<strong style="font-size:10px;text-transform:uppercase;">${hub.name}</strong><br/><span style="font-size:9px;color:#64748b;">Selected Drop-off Hub</span>`);
+
+    const iMarker = L.marker(itemCoords, { icon: itemIcon }).addTo(map)
+      .bindPopup(`<strong style="font-size:10px;text-transform:uppercase;">Item Found Location</strong><br/><span style="font-size:9px;color:#64748b;">${foundLocation || 'Reported Spot'}</span>`);
+
+    L.polyline([itemCoords, hubCoords], {
+      color: '#3b82f6',
+      weight: 3,
+      opacity: 0.7,
+      dashArray: '5, 5'
+    }).addTo(map);
+
+    const group = L.featureGroup([hMarker, iMarker]);
+    map.fitBounds(group.getBounds().pad(0.3));
+
+    return () => {
+      map.remove();
+    };
+  }, [hub, foundLocation]);
+
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <span className="text-[8px] font-mono font-black text-slate-400 uppercase tracking-widest">
+          Hub Proximity Visualizer
+        </span>
+        <span className="text-[8px] font-mono text-blue-600 font-bold uppercase">
+          Distance to Hub: {hub.distance}
+        </span>
+      </div>
+      <div 
+        ref={containerRef} 
+        className="w-full h-32 rounded-xl overflow-hidden border border-slate-200 shadow-inner z-0 bg-slate-100"
+      />
+    </div>
+  );
+};
 
 interface FinderFlowProps {
   onItemCreated: (newItem: FoundItem) => void;
@@ -196,7 +295,7 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
       location: assignedHub.name,
       date: 'Just now',
       hubId: assignedHub.id,
-      status: 'Pending Valuation',
+      status: `Pending Drop-off at ${assignedHub.name}`,
       blurImg: mockPhoto || 'https://lh3.googleusercontent.com/aida-public/AB6AXuC0vaabrFIVpkb0hl-Y02m8D2jBnEz6loFtLB2XdkMf22vPKh8MYjP48NHimS377cQlguFvOkCCfKjRuKKx-MHH4BvAwGkRRmhyxUfL3EckE5yM9d3oldCISh9RoRXoKlSWxI0sTvmgZMBn8vVLIfMHZZle5TkoXQdmTypj8pS6zOL8TGohTC-Yl6YKPfrvvrxhEpWhhH8iqxEJngiMieaIUxG5637Wk8U1X65l7fuCfF9vyQK81s1mGKo5x84m8vCJxeVOBHuoBn6V',
       clearImg: mockPhoto || PRESET_PHOTOS[category].clear,
       submissionId: subId,
@@ -205,13 +304,16 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
       reporterEmail: finderEmail,
       rewardAmount: 0,
       serviceFee: 0,
-      hasPaidEscrow: false
+      hasPaidEscrow: false,
+      selectedHub: assignedHub.name,
+      hubLatitude: assignedHub.latitude,
+      hubLongitude: assignedHub.longitude
     };
 
     setIsLoading(true);
 
     try {
-      // Send found item submission info directly to Sheet.best Found Items endpoint with status 'Pending Valuation'
+      // Send found item submission info directly to Sheet.best Found Items endpoint with status 'Pending Drop-off at [Hub Name]'
       await dbService.submitFoundItem({
         Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         FinderName: finderName,
@@ -222,14 +324,17 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
         LossLocation: location,
         FoundDate: foundDate,
         StorageHub: assignedHub.name,
-        Status: 'Pending Valuation',
+        Status: `Pending Drop-off at ${assignedHub.name}`,
         ImageReference: mockPhotoName || 'camera_capture_landmark.jpg',
         "Item Name": `${category} found at ${location.split(',')[0]}`,
         "Location": assignedHub.name,
         "Description": description,
         "Date Found": foundDate,
         RewardAmount: 0,
-        ServiceFee: 0
+        ServiceFee: 0,
+        SelectedHub: assignedHub.name,
+        HubLatitude: assignedHub.latitude,
+        HubLongitude: assignedHub.longitude
       });
 
       setIsLoading(false);
@@ -522,17 +627,43 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
                   </div>
                 </div>
 
-                {/* Automatic Hub Mapping preview if location detected */}
-                {location && (
-                  <div className="p-3 bg-white rounded border-l-4 border-emerald-500 border border-slate-200 shadow-sm space-y-1 animate-fade-in">
-                    <span className="text-[9px] uppercase font-bold tracking-wider text-emerald-600">
-                      Auto-Mapped Recovery Partner Hub
-                    </span>
-                    <p className="text-sm font-bold text-slate-800 uppercase tracking-wide">{assignedHub.name}</p>
-                    <p className="text-xs text-slate-500">{assignedHub.address}</p>
-                    <p className="text-[10px] text-emerald-700 font-bold mt-1 uppercase tracking-wide">✓ Verified drop location ({assignedHub.distance})</p>
-                  </div>
-                )}
+                {/* Select Nearest Hub Selector */}
+                <div className="space-y-2 border-t border-slate-100 pt-4">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    Select Nearest Hub
+                  </label>
+                  <select
+                    value={assignedHub.id}
+                    onChange={(e) => {
+                      const selected = CHENNAI_HUBS.find(h => h.id === e.target.value);
+                      if (selected) {
+                        setAssignedHub(selected);
+                      }
+                    }}
+                    className="w-full p-3 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-900 transition-all font-sans font-medium"
+                  >
+                    {CHENNAI_HUBS.map((hub) => (
+                      <option key={hub.id} value={hub.id}>
+                        {hub.name} ({hub.distance})
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Small interactive map snippet showing Selected Hub relative to Found Location */}
+                  {location && (
+                    <div className="mt-3 p-3 bg-white rounded border border-slate-200 shadow-xs space-y-3 animate-fade-in">
+                      <div className="space-y-1">
+                        <span className="text-[9px] uppercase font-bold tracking-wider text-emerald-600 block">
+                          Selected Drop-Off Center
+                        </span>
+                        <p className="text-sm font-bold text-slate-800 uppercase tracking-wide">{assignedHub.name}</p>
+                        <p className="text-xs text-slate-500">{assignedHub.address}</p>
+                      </div>
+
+                      <MiniHubMap hub={assignedHub} foundLocation={location} />
+                    </div>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <button
@@ -577,8 +708,8 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
                   <span className="w-1.5 h-5 bg-emerald-500 inline-block"></span>
                   Reported Successfully!
                 </h3>
-                <p className="text-xs text-slate-500 max-w-xs mt-1 leading-relaxed">
-                  Drop off the item at our assigned hub in Chennai to claim your micro-reward once verified.
+                <p className="text-xs text-slate-500 max-w-xs mt-1 leading-relaxed font-medium">
+                  Thank you! Please drop off the item at our <span className="font-extrabold text-blue-950">{assignedHub.name}</span> center within 48 hours to complete the verification process.
                 </p>
               </div>
             </div>
@@ -673,6 +804,12 @@ export const FinderFlow: React.FC<FinderFlowProps> = ({ onItemCreated, onNavigat
             <p className="text-xs text-slate-500 leading-relaxed font-medium">
               Your item report for the <span className="font-bold text-slate-800">{category}</span> has been saved along with file attachment <span className="font-mono text-[11px] font-bold text-blue-900 bg-slate-100 px-1.5 py-0.5 rounded">{mockPhotoName || 'camera_capture_landmark.jpg'}</span> in the Chennai ledger.
             </p>
+
+            <div className="bg-blue-50/70 border border-blue-100 p-3 rounded-xl text-left">
+              <p className="text-xs text-blue-950 leading-relaxed font-bold">
+                Thank you! Please drop off the item at our {assignedHub.name} center within 48 hours to complete the verification process.
+              </p>
+            </div>
 
             <div className="border-t border-slate-100 pt-4 flex flex-col gap-2">
               <div className="text-[10px] text-slate-400 font-mono uppercase">

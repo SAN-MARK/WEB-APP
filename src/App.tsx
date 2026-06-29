@@ -243,22 +243,28 @@ export default function App() {
     localStorage.setItem('findback_isAdminLoggedIn', String(isAdminLoggedIn));
   }, [isAdminLoggedIn]);
 
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState<number>(() => {
+    const saved = localStorage.getItem('notificationCount');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+  const unreadCount = notificationCount;
   const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
 
-  const refreshUnreadCount = async () => {
+  const refreshNotifications = async () => {
     if (!user || !user.email) return;
     try {
       const liveData = await apiRouter.fetchNotifications();
       const localStored = localStorage.getItem('findback_notifications_local');
       const localList = localStored ? JSON.parse(localStored) : [];
       const combined = [...liveData, ...localList];
+      
       const userEmailLower = user.email.toLowerCase().trim();
       const filtered = combined.filter(n => {
         if (!n.UserID) return false;
         const uid = n.UserID.toLowerCase().trim();
         return uid === userEmailLower || uid === 'all';
       });
+
       // Deduplicate
       const seen = new Set<string>();
       const deduped = [];
@@ -269,27 +275,70 @@ export default function App() {
           deduped.push(item);
         }
       }
-      const count = deduped.filter(n => n.ReadStatus === 'false' || !n.ReadStatus || n.ReadStatus === false).length;
-      setUnreadCount(count);
+
+      const count = deduped.filter(n => String(n.ReadStatus) === 'false' || !n.ReadStatus).length;
+      setNotificationCount(count);
+      localStorage.setItem('notificationCount', String(count));
     } catch (e) {
-      console.warn('[API Warning] refreshUnreadCount error:', e);
+      console.warn('[API Warning] refreshNotifications error:', e);
     }
   };
 
   useEffect(() => {
-    if (user && user.email) {
-      refreshUnreadCount();
-      const interval = setInterval(refreshUnreadCount, 15000); // Check every 15 seconds
-      return () => clearInterval(interval);
-    }
+    if (!user || !user.email) return;
+
+    refreshNotifications();
+    const interval = setInterval(refreshNotifications, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
   }, [user]);
 
-  // Sum up pending service fees for items reported by this user that are not yet settled
+  const markAllAsRead = async () => {
+    if (!user || !user.email) return;
+    try {
+      // 1. Fetch live data to locate indices of false unread status
+      const liveData = await apiRouter.fetchNotifications();
+      const userEmailLower = user.email.toLowerCase().trim();
+
+      const promises = liveData.map((notif, index) => {
+        const isForUser = notif.UserID && (notif.UserID.toLowerCase().trim() === userEmailLower || notif.UserID.toLowerCase().trim() === 'all');
+        const isUnread = String(notif.ReadStatus) === 'false' || !notif.ReadStatus;
+        if (isForUser && isUnread) {
+          return apiRouter.markNotificationAsRead(index);
+        }
+        return null;
+      }).filter(Boolean);
+
+      // 2. Clear local storage notifications as well
+      const localStored = localStorage.getItem('findback_notifications_local');
+      if (localStored) {
+        const localList = JSON.parse(localStored);
+        localList.forEach((n: any) => {
+          n.ReadStatus = 'true';
+        });
+        localStorage.setItem('findback_notifications_local', JSON.stringify(localList));
+      }
+
+      if (promises.length > 0) {
+        await Promise.all(promises);
+      }
+      
+      setNotificationCount(0);
+      localStorage.setItem('notificationCount', '0');
+    } catch (e) {
+      console.error('[API Error] markAllAsRead failed:', e);
+      // Fallback: clear count immediately for responsive feel
+      setNotificationCount(0);
+      localStorage.setItem('notificationCount', '0');
+    }
+  };
+
+  // Sum up pending service fees for items reported by this user that are not yet settled and are verified/ready
   const pendingServiceFeeTotal = items
     .filter(item => {
       const finderEmail = (item.reporterEmail || '').trim().toLowerCase();
       const userEmail = (user.email || '').trim().toLowerCase();
-      return finderEmail === userEmail && item.status !== 'Settled';
+      const isVerifiedOrReady = item.status === 'Verified' || item.status === 'Ready for Claim';
+      return finderEmail === userEmail && item.status !== 'Settled' && isVerifiedOrReady;
     })
     .reduce((sum, item) => sum + (item.serviceFee || 0), 0);
 
@@ -645,7 +694,10 @@ export default function App() {
                   </button>
 
                   <button
-                    onClick={() => setIsNotificationDrawerOpen(true)}
+                    onClick={() => {
+                      setIsNotificationDrawerOpen(true);
+                      markAllAsRead();
+                    }}
                     className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/50 relative"
                   >
                     <Bell className="w-4 h-4 text-slate-400" />
@@ -762,7 +814,10 @@ export default function App() {
                   <p className="text-sm font-black text-emerald-600 font-mono">₹{user.balance}</p>
                 </div>
                 <button
-                  onClick={() => setIsNotificationDrawerOpen(true)}
+                  onClick={() => {
+                    setIsNotificationDrawerOpen(true);
+                    markAllAsRead();
+                  }}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl relative cursor-pointer"
                 >
                   <Bell className="w-4.5 h-4.5" />
@@ -984,7 +1039,10 @@ export default function App() {
               {/* Dynamic Google User Session Portrait */}
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setIsNotificationDrawerOpen(true)}
+                  onClick={() => {
+                    setIsNotificationDrawerOpen(true);
+                    markAllAsRead();
+                  }}
                   className="text-white p-1 hover:bg-blue-800 rounded relative cursor-pointer"
                 >
                   <Bell className="w-4.5 h-4.5" />
@@ -1103,30 +1161,40 @@ export default function App() {
                       <p className="text-[10px] text-slate-400 font-bold uppercase py-2">No active rewards claims found</p>
                     ) : (
                       activeRewardsItems.map((item) => {
-                        const hasValuation = item.serviceFee > 0 || item.status === 'Ready for Claim';
+                        const isVerifiedOrReady = item.status === 'Verified' || item.status === 'Ready for Claim';
+                        
                         return (
                           <div key={item.id} className="bg-slate-50 rounded-xl border border-slate-200 p-3.5 flex flex-col gap-2">
                             <div className="flex justify-between items-start">
                               <div>
                                 <h5 className="font-black text-xs text-slate-800 uppercase">{item.name || `${item.category} Found`}</h5>
-                                <p className="text-[9px] font-mono text-slate-400 mt-0.5">{item.location} • Status: <span className="text-amber-600 font-bold">{item.status}</span></p>
+                                <p className="text-[9px] font-mono text-slate-400 mt-0.5">
+                                  {item.location} • Status:{' '}
+                                  <span className="text-amber-600 font-bold">
+                                    {isVerifiedOrReady ? item.status : 'Awaiting Admin Verification'}
+                                  </span>
+                                </p>
                               </div>
-                              <span className="text-xs font-black text-slate-700 font-mono">Reward: ₹{item.rewardAmount}</span>
+                              {isVerifiedOrReady && (
+                                <span className="text-xs font-black text-slate-700 font-mono">Reward: ₹{item.rewardAmount}</span>
+                              )}
                             </div>
                             <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
-                                Service Fee (30%): <span className="text-slate-800 font-mono font-black">₹{item.serviceFee}</span>
-                              </span>
-                              {hasValuation ? (
-                                <button
-                                  onClick={() => handlePayServiceFee(item.id)}
-                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer shadow-sm flex items-center gap-1"
-                                >
-                                  Settle & Claim
-                                </button>
+                              {isVerifiedOrReady ? (
+                                <>
+                                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+                                    Service Fee (30%): <span className="text-slate-800 font-mono font-black">₹{item.serviceFee}</span>
+                                  </span>
+                                  <button
+                                    onClick={() => handlePayServiceFee(item.id)}
+                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                                  >
+                                    Settle & Claim
+                                  </button>
+                                </>
                               ) : (
                                 <span className="text-[8px] font-mono text-slate-400 font-bold uppercase tracking-widest bg-slate-200/50 px-2 py-1 rounded">
-                                  Pending Valuation
+                                  Awaiting Admin Verification
                                 </span>
                               )}
                             </div>
@@ -1381,6 +1449,7 @@ export default function App() {
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     setIsNotificationDrawerOpen(true);
+                    markAllAsRead();
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer text-slate-400 hover:text-white hover:bg-slate-900"
                 >
@@ -1464,7 +1533,7 @@ export default function App() {
             isOpen={isNotificationDrawerOpen}
             onClose={() => {
               setIsNotificationDrawerOpen(false);
-              refreshUnreadCount();
+              refreshNotifications();
             }}
             currentUser={user}
             onNavigateToItem={(itemId) => {

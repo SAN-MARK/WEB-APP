@@ -547,13 +547,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 }
 
                 return userItems.map((item) => {
-                  let badgeColor = "text-amber-700 bg-amber-50 border-amber-200";
-                  if (item.status === 'Ready for Claim' || item.status === 'Claimed') {
-                    badgeColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
-                  } else if (item.status === 'Under verification') {
-                    badgeColor = "text-blue-700 bg-blue-50 border-blue-200";
-                  } else if (item.status === 'Pending Valuation') {
-                    badgeColor = "text-purple-700 bg-purple-50 border-purple-200";
+                  const isVerifiedOrReady = item.status === 'Verified' || item.status === 'Ready for Claim';
+                  const isSettled = item.status === 'Settled';
+                  
+                  let badgeText = item.status;
+                  let badgeColor = "text-amber-700 bg-amber-50 border-amber-200 font-semibold";
+
+                  if (isVerifiedOrReady || isSettled) {
+                    badgeColor = "text-emerald-700 bg-emerald-50 border-emerald-200 font-extrabold";
+                  } else {
+                    badgeText = "Awaiting Admin Verification";
                   }
 
                   return (
@@ -574,8 +577,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                           <p className="text-[9px] font-mono text-slate-400 mt-0.5 truncate">{item.location}</p>
                         </div>
                       </div>
-                      <span className={`text-[8px] font-black px-2 py-1 rounded-md border uppercase tracking-wider shrink-0 ${badgeColor}`}>
-                        {item.status}
+                      <span className={`text-[8px] uppercase tracking-wider shrink-0 px-2 py-1 rounded-md border text-center ${badgeColor}`}>
+                        {badgeText}
                       </span>
                     </div>
                   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FoundItem } from '../types';
+import { CHENNAI_HUBS } from './MockData';
 import { X, RefreshCw, CheckCircle2, ClipboardCheck, User, ShieldCheck, Check, Ban, ExternalLink, FileText, Package, Lock } from 'lucide-react';
 import { dbService } from '../services/dbService';
 import { apiRouter } from '../services/apiRouter';
@@ -50,6 +51,7 @@ export const AdminHub: React.FC<AdminHubProps> = ({
   const [activeTab, setActiveTab] = useState<'claims' | 'verifications' | 'inventory'>('claims');
   const [selectedItemForUPI, setSelectedItemForUPI] = useState<FoundItem | null>(null);
   const [isProcessingUPI, setIsProcessingUPI] = useState(false);
+  const [hubFilter, setHubFilter] = useState<string>('all');
 
   // Live Sheet Data states
   const [liveVerifications, setLiveVerifications] = useState<LiveIdentityVerification[]>([]);
@@ -212,7 +214,7 @@ export const AdminHub: React.FC<AdminHubProps> = ({
     setSuccessMsg('');
     try {
       const ok = await apiRouter.updateFoundItemFields(index, {
-        Status: 'Ready for Claim',
+        Status: 'Verified',
         PlatformServiceFee: calculatedFee,
         ServiceFee: calculatedFee,
         RewardAmount: enteredVal
@@ -222,7 +224,7 @@ export const AdminHub: React.FC<AdminHubProps> = ({
         setLiveFoundItems(prev => {
           const next = [...prev];
           if (next[index]) {
-            next[index].Status = 'Ready for Claim';
+            next[index].Status = 'Verified';
             next[index].ServiceFee = calculatedFee;
             next[index].RewardAmount = enteredVal;
           }
@@ -231,7 +233,7 @@ export const AdminHub: React.FC<AdminHubProps> = ({
 
         // Trigger notification and local backup
         const userId = item?.FinderEmail || item?.FinderPhone || 'all';
-        const message = `Reward Released!|Admin has verified your item ${item?.ItemCategory || 'Found Item'}. Reward of ₹${enteredVal} is now available.`;
+        const message = `Item Verified!|Item Verified! Your reward details are now available in your Rewards Dashboard.`;
         
         const notif = {
           UserID: userId,
@@ -674,6 +676,25 @@ export const AdminHub: React.FC<AdminHubProps> = ({
             </button>
           </div>
 
+          {/* Expected Hub Dropdown Filter */}
+          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5 text-left">
+            <label className="block text-[8px] font-mono font-black uppercase tracking-widest text-slate-400">
+              Filter Expected / Deposited Items By Hub
+            </label>
+            <select
+              value={hubFilter}
+              onChange={(e) => setHubFilter(e.target.value)}
+              className="w-full p-2 bg-slate-900 border border-slate-700 rounded text-xs text-white font-bold uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer"
+            >
+              <option value="all">All Locations (No Filter)</option>
+              {CHENNAI_HUBS.map(hub => (
+                <option key={hub.id} value={hub.name}>
+                  {hub.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {loadingFoundItems ? (
             <div className="py-12 text-center bg-slate-900 border border-slate-800 rounded-xl">
               <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
@@ -688,133 +709,155 @@ export const AdminHub: React.FC<AdminHubProps> = ({
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {liveFoundItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3.5 shadow-lg text-slate-100"
-                >
-                  <div className="flex gap-3 pb-2 border-b border-slate-800/80">
-                    <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-slate-800 bg-slate-950 flex items-center justify-center">
-                      <img
-                        src={item.ImageReference || 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?w=100&auto=format&fit=crop&q=60'}
-                        className="w-full h-full object-cover"
-                        alt="preview"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?w=100&auto=format&fit=crop&q=60';
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-black text-xs text-white uppercase tracking-wide">{item.ItemCategory || 'Uncategorized'}</h4>
-                        <span className="text-[8px] font-mono text-slate-400">{item.Timestamp ? item.Timestamp.split(',')[0] : ''}</span>
-                      </div>
-                      <p className="text-[11px] text-slate-300 line-clamp-2 mt-0.5 italic">"{item.ItemDescription}"</p>
-                    </div>
+            (() => {
+              const filtered = liveFoundItems.filter(item => {
+                if (hubFilter === 'all') return true;
+                const itemHub = item.SelectedHub || item.StorageHub || '';
+                return itemHub.toLowerCase().includes(hubFilter.toLowerCase());
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="py-12 text-center bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <Package className="w-12 h-12 text-slate-600 mx-auto" />
+                    <p className="text-xs font-bold uppercase tracking-wider text-white mt-2">No expected items at this location</p>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">
+                      No reported items match this specific Chennai recovery hub.
+                    </p>
                   </div>
+                );
+              }
 
-                  <div className="flex gap-3 items-stretch">
-                    <div className="flex-1 grid grid-cols-2 gap-2 text-[10px] uppercase font-bold tracking-wider bg-slate-950 p-2.5 rounded-lg border border-slate-800/50">
-                      <div>
-                        <span className="text-slate-500 block">Loss Location:</span>
-                        <span className="text-white">{item.LossLocation || 'Chennai City'}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block">Storage Hub:</span>
-                        <span className="text-white">{item.StorageHub || 'Central Hub'}</span>
-                      </div>
-                      <div className="pt-1.5 border-t border-slate-900 col-span-2">
-                        <span className="text-slate-500 block">Finder details:</span>
-                        <span className="text-slate-300 font-medium">{item.FinderName} • {item.FinderPhone}</span>
-                      </div>
-                    </div>
-
-                    {/* Item QR Column */}
-                    <div className="flex flex-col items-center justify-center bg-slate-950 border border-slate-800/50 p-2 rounded-lg shrink-0 w-24 text-center">
-                      <span className="text-[8px] font-bold uppercase tracking-widest text-slate-500 mb-1">Item QR</span>
-                      <div className="p-1 bg-white rounded">
-                        <img
-                          src={`https://quickchart.io/qr?text=https://findback-app-url.com/item/${encodeURIComponent(item.id || item.submissionId || `api-${index}`)}&size=200`}
-                          alt="Item QR"
-                          className="w-14 h-14 object-contain"
-                        />
-                      </div>
-                      <span className="text-[7px] text-slate-400 font-mono mt-1 select-all">{item.id || item.submissionId || `api-${index}`}</span>
-                    </div>
-                  </div>
-
-                  {/* Valuation Assignment Input for Pending Valuation items */}
-                  {(!item.ServiceFee || Number(item.ServiceFee) === 0 || item.Status === 'Pending Valuation') && (
-                    <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-2 text-left animate-fade-in">
-                      <div className="flex justify-between items-center">
-                        <label className="block text-[9px] font-black uppercase tracking-widest text-cyan-400">
-                          Assign Service Fee (₹)
-                        </label>
-                        {assignedFees[index] && (
-                          <span className="text-[8px] text-emerald-400 font-extrabold uppercase tracking-wide">
-                            ✓ 30% Platform Fee: ₹{Math.round(Number(assignedFees[index]) * 0.3)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <span className="absolute left-2 top-1.5 text-slate-500 text-xs font-bold">₹</span>
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="Valuation/Reward (e.g. 1000)"
-                            value={assignedFees[index] || ''}
-                            onChange={(e) => setAssignedFees(prev => ({ ...prev, [index]: e.target.value }))}
-                            className="w-full pl-5 pr-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono font-bold"
+              return (
+                <div className="space-y-4">
+                  {filtered.map((item, index) => (
+                    <div
+                      key={index}
+                      className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3.5 shadow-lg text-slate-100 animate-fade-in"
+                    >
+                      <div className="flex gap-3 pb-2 border-b border-slate-800/80">
+                        <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-slate-800 bg-slate-950 flex items-center justify-center">
+                          <img
+                            src={item.ImageReference || 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?w=100&auto=format&fit=crop&q=60'}
+                            className="w-full h-full object-cover"
+                            alt="preview"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?w=100&auto=format&fit=crop&q=60';
+                            }}
                           />
                         </div>
-                        <button
-                          type="button"
-                          disabled={updatingItemIndex !== null || !assignedFees[index]}
-                          onClick={() => handleVerifyAndPublish(index, item)}
-                          className="px-3.5 py-1 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-slate-950 font-black rounded text-[10px] uppercase tracking-wider transition-all cursor-pointer shrink-0"
-                        >
-                          Verify & Publish
-                        </button>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-black text-xs text-white uppercase tracking-wide">{item.ItemCategory || 'Uncategorized'}</h4>
+                            <span className="text-[8px] font-mono text-slate-400">{item.Timestamp ? item.Timestamp.split(',')[0] : ''}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-300 line-clamp-2 mt-0.5 italic">"{item.ItemDescription}"</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 items-stretch">
+                        <div className="flex-1 grid grid-cols-2 gap-2 text-[10px] uppercase font-bold tracking-wider bg-slate-950 p-2.5 rounded-lg border border-slate-800/50">
+                          <div>
+                            <span className="text-slate-500 block">Loss Location:</span>
+                            <span className="text-white">{item.LossLocation || 'Chennai City'}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 block">Expected Hub:</span>
+                            <span className="text-cyan-400">{item.SelectedHub || item.StorageHub || 'Central Hub'}</span>
+                          </div>
+                          <div className="pt-1.5 border-t border-slate-900 col-span-2">
+                            <span className="text-slate-500 block">Finder details:</span>
+                            <span className="text-slate-300 font-medium">{item.FinderName} • {item.FinderPhone}</span>
+                          </div>
+                        </div>
+
+                        {/* Item QR Column */}
+                        <div className="flex flex-col items-center justify-center bg-slate-950 border border-slate-800/50 p-2 rounded-lg shrink-0 w-24 text-center">
+                          <span className="text-[8px] font-bold uppercase tracking-widest text-slate-500 mb-1">Item QR</span>
+                          <div className="p-1 bg-white rounded">
+                            <img
+                              src={`https://quickchart.io/qr?text=https://findback-app-url.com/item/${encodeURIComponent(item.id || item.submissionId || `api-${index}`)}&size=200`}
+                              alt="Item QR"
+                              className="w-14 h-14 object-contain"
+                            />
+                          </div>
+                          <span className="text-[7px] text-slate-400 font-mono mt-1 select-all">{item.id || item.submissionId || `api-${index}`}</span>
+                        </div>
+                      </div>
+
+                      {/* Valuation Assignment Input for Pending Valuation items */}
+                      {(!item.ServiceFee || Number(item.ServiceFee) === 0 || item.Status === 'Pending Valuation' || item.Status?.includes('Pending Drop-off')) && (
+                        <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-2 text-left animate-fade-in">
+                          <div className="flex justify-between items-center">
+                            <label className="block text-[9px] font-black uppercase tracking-widest text-cyan-400">
+                              Assign Service Fee (₹)
+                            </label>
+                            {assignedFees[index] && (
+                              <span className="text-[8px] text-emerald-400 font-extrabold uppercase tracking-wide">
+                                ✓ 30% Platform Fee: ₹{Math.round(Number(assignedFees[index]) * 0.3)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <span className="absolute left-2 top-1.5 text-slate-500 text-xs font-bold">₹</span>
+                              <input
+                                type="number"
+                                min="1"
+                                placeholder="Valuation/Reward (e.g. 1000)"
+                                value={assignedFees[index] || ''}
+                                onChange={(e) => setAssignedFees(prev => ({ ...prev, [index]: e.target.value }))}
+                                className="w-full pl-5 pr-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono font-bold"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              disabled={updatingItemIndex !== null || !assignedFees[index]}
+                              onClick={() => handleVerifyAndPublish(index, item)}
+                              className="px-3.5 py-1 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-slate-950 font-black rounded text-[10px] uppercase tracking-wider transition-all cursor-pointer shrink-0"
+                            >
+                              Verify & Publish
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {item.ServiceFee && Number(item.ServiceFee) > 0 && (
+                        <div className="flex justify-between items-center text-[10px] bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800/40">
+                          <span className="text-slate-500 font-bold uppercase tracking-wider">Assigned Fees:</span>
+                          <span className="text-cyan-400 font-black font-mono">₹{item.ServiceFee} (Platform) • ₹{item.RewardAmount} (Total Val)</span>
+                        </div>
+                      )}
+
+                      {/* Dropdown status switcher utility */}
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Update Ledger Status:</span>
+                        <div className="flex items-center gap-2">
+                          {updatingItemIndex === index && (
+                            <RefreshCw className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                          )}
+                          <select
+                            value={item.Status || 'Under Review'}
+                            onChange={(e) => handleUpdateItemStatus(index, e.target.value)}
+                            disabled={updatingItemIndex !== null}
+                            className="p-1.5 px-3 rounded-lg text-[10px] font-black border border-slate-800 bg-slate-950 text-white cursor-pointer uppercase font-mono focus:ring-1 focus:ring-cyan-400 focus:outline-none"
+                          >
+                            <option value="Pending Valuation">Pending Valuation</option>
+                            <option value="Ready for Claim">Ready for Claim</option>
+                            <option value="Verified">Verified</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Match Found">Match Found</option>
+                            <option value="Claimed">Claimed</option>
+                            <option value="Settled">Settled</option>
+                            <option value="Available">Available</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
-                  )}
-
-                  {item.ServiceFee && Number(item.ServiceFee) > 0 && (
-                    <div className="flex justify-between items-center text-[10px] bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800/40">
-                      <span className="text-slate-500 font-bold uppercase tracking-wider">Assigned Fees:</span>
-                      <span className="text-cyan-400 font-black font-mono">₹{item.ServiceFee} (Platform) • ₹{item.RewardAmount} (Total Val)</span>
-                    </div>
-                  )}
-
-                  {/* Dropdown status switcher utility */}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Update Ledger Status:</span>
-                    <div className="flex items-center gap-2">
-                      {updatingItemIndex === index && (
-                        <RefreshCw className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
-                      )}
-                      <select
-                        value={item.Status || 'Under Review'}
-                        onChange={(e) => handleUpdateItemStatus(index, e.target.value)}
-                        disabled={updatingItemIndex !== null}
-                        className="p-1.5 px-3 rounded-lg text-[10px] font-black border border-slate-800 bg-slate-950 text-white cursor-pointer uppercase font-mono focus:ring-1 focus:ring-cyan-400 focus:outline-none"
-                      >
-                        <option value="Pending Valuation">Pending Valuation</option>
-                        <option value="Ready for Claim">Ready for Claim</option>
-                        <option value="Verified">Verified</option>
-                        <option value="Under Review">Under Review</option>
-                        <option value="Match Found">Match Found</option>
-                        <option value="Claimed">Claimed</option>
-                        <option value="Settled">Settled</option>
-                        <option value="Available">Available</option>
-                      </select>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()
           )}
         </div>
       )}

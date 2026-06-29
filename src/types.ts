@@ -1,6 +1,6 @@
 export type ItemCategory = 'Phone' | 'Wallet' | 'Keys' | 'Documents' | 'Jewellery' | 'Other' | 'Electronics';
 
-export type ItemStatus = 'Found' | 'Dropped at Hub' | 'Awaiting Approval' | 'Claimed' | 'Under verification' | 'Pending Valuation' | 'Ready for Claim' | 'Settled';
+export type ItemStatus = 'Found' | 'Dropped at Hub' | 'Awaiting Approval' | 'Claimed' | 'Under verification' | 'Pending Valuation' | 'Ready for Claim' | 'Settled' | string;
 
 export interface ProofInfo {
   fullName: string;
@@ -28,6 +28,9 @@ export interface FoundItem {
   rewardAmount: number;
   hasPaidEscrow: boolean;
   serviceFee: number;
+  selectedHub?: string;
+  hubLatitude?: number;
+  hubLongitude?: number;
   proof?: ProofInfo;
 }
 
@@ -37,6 +40,8 @@ export interface RecoveryHub {
   address: string;
   distance: string;
   gate?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UserProfile {

@@ -38,6 +38,9 @@ export interface LiveFoundItem {
   OwnerProof?: string;
   RewardAmount?: string | number;
   ServiceFee?: string | number;
+  SelectedHub?: string;
+  HubLatitude?: string | number;
+  HubLongitude?: string | number;
 }
 
 export const apiRouter = {

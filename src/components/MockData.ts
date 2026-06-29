@@ -6,35 +6,45 @@ export const CHENNAI_HUBS: RecoveryHub[] = [
     name: 'Adyar Hub, Chennai',
     address: 'Gate No 2, Near Adyar Depot, LB Road, Chennai - 600020',
     distance: '1.2 KM',
-    gate: 'Gate No. 2 Depot'
+    gate: 'Gate No. 2 Depot',
+    latitude: 13.0033,
+    longitude: 80.2550
   },
   {
     id: 'tnagar',
     name: 'T. Nagar Community Hub',
     address: '42nd Street, Beside Metro Gate A, T. Nagar, Chennai - 600017',
     distance: '1.8 KM',
-    gate: 'Gate No. 3 Counter'
+    gate: 'Gate No. 3 Counter',
+    latitude: 13.0405,
+    longitude: 80.2337
   },
   {
     id: 'annanagar',
     name: 'Anna Nagar West Hub',
     address: 'Main Avenue, Near Anna Nagar Arch, Chennai - 600040',
     distance: '2.4 KM',
-    gate: 'Reception Desk'
+    gate: 'Reception Desk',
+    latitude: 13.0850,
+    longitude: 80.2101
   },
   {
     id: 'velachery',
     name: 'Velachery Recovery Hub',
     address: '100 Feet Bypass Road, Opposite Phoenix Marketcity, Chennai - 600042',
     distance: '3.5 KM',
-    gate: 'Helpdesk 1A'
+    gate: 'Helpdesk 1A',
+    latitude: 12.9801,
+    longitude: 80.2228
   },
   {
     id: 'central',
     name: 'Chennai Central Hub',
     address: 'Platform 1 Concourse, Puratchi Thalaivar Dr. M.G. Ramachandran Central Railway Station, Chennai - 600003',
     distance: '4.0 KM',
-    gate: 'Platform 1 Help Desk'
+    gate: 'Platform 1 Help Desk',
+    latitude: 13.0827,
+    longitude: 80.2707
   }
 ];
 
