@@ -53,6 +53,12 @@ function mapRowToFoundItem(row: any, index: number): FoundItem {
     status = 'Claimed';
   } else if (statusRaw === 'Dropped at Hub') {
     status = 'Dropped at Hub';
+  } else if (statusRaw === 'Ready for Claim' || statusRaw === 'Verified') {
+    status = 'Ready for Claim';
+  } else if (statusRaw === 'Pending Valuation') {
+    status = 'Pending Valuation';
+  } else if (statusRaw === 'Settled') {
+    status = 'Settled';
   }
 
   const PRESET_BLUR_PHOTOS: Record<ItemCategory, string> = {
@@ -278,10 +284,28 @@ export default function App() {
     }
   }, [user]);
 
-  // Sum up pending service fees for items reported by this user that are not yet claimed
+  // Sum up pending service fees for items reported by this user that are not yet settled
   const pendingServiceFeeTotal = items
-    .filter(item => (item.reporterEmail || '').trim().toLowerCase() === user.email.trim().toLowerCase() && item.status !== 'Claimed')
+    .filter(item => {
+      const finderEmail = (item.reporterEmail || '').trim().toLowerCase();
+      const userEmail = (user.email || '').trim().toLowerCase();
+      return finderEmail === userEmail && item.status !== 'Settled';
+    })
     .reduce((sum, item) => sum + (item.serviceFee || 0), 0);
+
+  // Filter items reported by user that are not settled
+  const activeRewardsItems = items.filter(item => {
+    const finderEmail = (item.reporterEmail || '').trim().toLowerCase();
+    const userEmail = (user.email || '').trim().toLowerCase();
+    return finderEmail === userEmail && item.status !== 'Settled';
+  });
+
+  // Filter items reported by user that are settled
+  const settledItems = items.filter(item => {
+    const finderEmail = (item.reporterEmail || '').trim().toLowerCase();
+    const userEmail = (user.email || '').trim().toLowerCase();
+    return finderEmail === userEmail && item.status === 'Settled';
+  });
 
   // Onboarding Login entry callback
   const handleLogin = (name: string, email: string, phone: string, avatarUrl?: string) => {
@@ -418,6 +442,53 @@ export default function App() {
     }));
 
     showBanner(`🎉 UPI settlement complete! Finder received ₹${reward} micro-reward.`);
+  };
+
+  // 4. Finder: Settle service fee, update state to 'Settled', and claim reward
+  const handlePayServiceFee = async (itemId: string) => {
+    // Find the item
+    const matchedItem = items.find((item) => item.id === itemId);
+    if (!matchedItem) return;
+
+    const finderEmail = (matchedItem.reporterEmail || '').trim().toLowerCase();
+    const userEmail = (user.email || '').trim().toLowerCase();
+    if (finderEmail !== userEmail) {
+      showBanner("Error: Only the reporting finder can settle this item.");
+      return;
+    }
+
+    // Update locally
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              status: 'Settled'
+            }
+          : item
+      )
+    );
+
+    // Sync to live database (Sheet.best)
+    try {
+      const liveRows = await apiRouter.fetchFoundItems();
+      const rowIndex = liveRows.findIndex(row => row.id === itemId || row.submissionId === matchedItem.submissionId);
+      if (rowIndex !== -1) {
+        await apiRouter.updateFoundItemStatus(rowIndex, 'Settled');
+      }
+    } catch (e) {
+      console.warn('[API Warning] Settle status update failed on Sheet.best, using local fallback.', e);
+    }
+
+    // Add reward to finder's civic wallet balance
+    const reward = matchedItem.rewardAmount || 60;
+    setUser((prev) => ({
+      ...prev,
+      balance: prev.balance + reward,
+      claimedCount: prev.claimedCount + 1
+    }));
+
+    showBanner(`🎉 Platform fee settled! ₹${reward} reward transferred to your Civic Wallet.`);
   };
 
   const handleLogout = () => {
@@ -1021,20 +1092,77 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Payout channels list */}
+                {/* Active Claims & Reward Settlements List */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 text-left space-y-3 shadow-sm">
+                  <h4 className="font-display font-black text-[11px] uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
+                    <span className="w-1 h-3.5 bg-blue-600 inline-block"></span>
+                    Active Claims & Service Fees
+                  </h4>
+                  <div className="space-y-3">
+                    {activeRewardsItems.length === 0 ? (
+                      <p className="text-[10px] text-slate-400 font-bold uppercase py-2">No active rewards claims found</p>
+                    ) : (
+                      activeRewardsItems.map((item) => {
+                        const hasValuation = item.serviceFee > 0 || item.status === 'Ready for Claim';
+                        return (
+                          <div key={item.id} className="bg-slate-50 rounded-xl border border-slate-200 p-3.5 flex flex-col gap-2">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h5 className="font-black text-xs text-slate-800 uppercase">{item.name || `${item.category} Found`}</h5>
+                                <p className="text-[9px] font-mono text-slate-400 mt-0.5">{item.location} • Status: <span className="text-amber-600 font-bold">{item.status}</span></p>
+                              </div>
+                              <span className="text-xs font-black text-slate-700 font-mono">Reward: ₹{item.rewardAmount}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+                                Service Fee (30%): <span className="text-slate-800 font-mono font-black">₹{item.serviceFee}</span>
+                              </span>
+                              {hasValuation ? (
+                                <button
+                                  onClick={() => handlePayServiceFee(item.id)}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                                >
+                                  Settle & Claim
+                                </button>
+                              ) : (
+                                <span className="text-[8px] font-mono text-slate-400 font-bold uppercase tracking-widest bg-slate-200/50 px-2 py-1 rounded">
+                                  Pending Valuation
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Reward Settlements History */}
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 text-left space-y-3 shadow-sm">
                   <h4 className="font-display font-black text-[11px] uppercase text-slate-800 tracking-wider flex items-center gap-1.5">
                     <span className="w-1 h-3.5 bg-emerald-500 inline-block"></span>
-                    Settlements History
+                    Reward Settlements History
                   </h4>
                   <div className="divide-y divide-slate-100 text-[11px] text-slate-600">
-                    <div className="py-2 flex justify-between">
-                      <div>
-                        <p className="font-bold text-slate-800">Tan Wallet reward</p>
-                        <p className="text-[9px] text-slate-400 font-mono">Completed</p>
+                    {settledItems.length === 0 ? (
+                      <div className="py-2 flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-slate-800">Initial login reward</p>
+                          <p className="text-[9px] text-slate-400 font-mono">Completed</p>
+                        </div>
+                        <span className="font-black text-emerald-600 shrink-0 font-mono">+₹60</span>
                       </div>
-                      <span className="font-black text-emerald-600 shrink-0 font-mono">+₹60</span>
-                    </div>
+                    ) : (
+                      settledItems.map((item) => (
+                        <div key={item.id} className="py-2.5 flex justify-between items-center">
+                          <div>
+                            <p className="font-bold text-slate-800 uppercase">{item.name || `${item.category} reward`}</p>
+                            <p className="text-[9px] text-slate-400 font-mono">Completed • Paid via Auto-UPI</p>
+                          </div>
+                          <span className="font-black text-emerald-600 shrink-0 font-mono">+₹{item.rewardAmount}</span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -1340,8 +1468,13 @@ export default function App() {
             }}
             currentUser={user}
             onNavigateToItem={(itemId) => {
-              setCurrentScreen('search');
-              showBanner(`Navigated to detail for item: ${itemId}`);
+              if (itemId === 'rewards') {
+                setCurrentScreen('rewards');
+              } else {
+                setCurrentScreen('search');
+                setAutoClaimItemId(itemId);
+              }
+              setIsNotificationDrawerOpen(false);
             }}
           />
 

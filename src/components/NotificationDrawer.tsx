@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check, AlertTriangle, Bell, RefreshCw, Eye } from 'lucide-react';
+import { X, Check, AlertTriangle, Bell, RefreshCw, Eye, Award } from 'lucide-react';
 import { apiRouter, LiveNotification } from '../services/apiRouter';
 import { UserProfile } from '../types';
 
@@ -154,6 +154,9 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
   const getIcon = (message?: string) => {
     const msg = message?.toLowerCase() || '';
+    if (msg.includes('reward') || msg.includes('settle')) {
+      return <Award className="w-3.5 h-3.5 text-amber-400" />;
+    }
     if (msg.includes('verified') || msg.includes('approved') || msg.includes('active')) {
       return <Check className="w-3.5 h-3.5 text-emerald-400" />;
     }
@@ -245,6 +248,19 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               ) : (
                 notifications.map((notif, index) => {
                   const isUnread = notif.ReadStatus === 'false' || !notif.ReadStatus || notif.ReadStatus === false;
+                  
+                  // Extract Title & Description if they are split by |
+                  const messageRaw = notif.Message || '';
+                  let title = '';
+                  let description = messageRaw;
+                  if (messageRaw.includes('|')) {
+                    const parts = messageRaw.split('|');
+                    title = parts[0];
+                    description = parts[1];
+                  }
+
+                  const isRewardsNotification = notif.ItemID === 'rewards' || notif.Message?.toLowerCase().includes('reward');
+
                   return (
                     <div
                       key={index}
@@ -267,19 +283,30 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline gap-2">
                           <span className="text-[8px] font-mono font-black text-slate-500 uppercase tracking-widest">
-                            {notif.ItemID === 'identity' ? 'Identity Dispatch' : 'Recovery Alert'}
+                            {notif.ItemID === 'identity' ? 'Identity Dispatch' : (isRewardsNotification ? 'Rewards Dispatch' : 'Recovery Alert')}
                           </span>
                           <span className="text-[8px] font-mono text-slate-400 tracking-tight shrink-0">
                             {getRelativeTime(notif.Timestamp)}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-200 mt-1 font-medium leading-relaxed">
-                          {notif.Message}
+                        {title && (
+                          <h5 className="font-extrabold text-xs text-white uppercase tracking-wide mt-1">
+                            {title}
+                          </h5>
+                        )}
+                        <p className="text-xs text-slate-200 mt-0.5 font-medium leading-relaxed">
+                          {description}
                         </p>
-                        {notif.ItemID && notif.ItemID !== 'identity' && (
-                          <span className="inline-flex items-center gap-1 mt-2 text-[8px] font-black text-cyan-400 uppercase tracking-widest bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/20">
-                            <Eye className="w-2.5 h-2.5" /> View Claimed Item
+                        {isRewardsNotification ? (
+                          <span className="inline-flex items-center gap-1 mt-2 text-[8px] font-black text-amber-400 uppercase tracking-widest bg-amber-950/50 px-2 py-0.5 rounded border border-amber-800/20">
+                            <Eye className="w-2.5 h-2.5" /> View Settlement
                           </span>
+                        ) : (
+                          notif.ItemID && notif.ItemID !== 'identity' && (
+                            <span className="inline-flex items-center gap-1 mt-2 text-[8px] font-black text-cyan-400 uppercase tracking-widest bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/20">
+                              <Eye className="w-2.5 h-2.5" /> View Claimed Item
+                            </span>
+                          )
                         )}
                       </div>
                     </div>

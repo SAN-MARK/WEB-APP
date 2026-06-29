@@ -1,6 +1,6 @@
 export type ItemCategory = 'Phone' | 'Wallet' | 'Keys' | 'Documents' | 'Jewellery' | 'Other' | 'Electronics';
 
-export type ItemStatus = 'Found' | 'Dropped at Hub' | 'Awaiting Approval' | 'Claimed' | 'Under verification' | 'Pending Valuation' | 'Ready for Claim';
+export type ItemStatus = 'Found' | 'Dropped at Hub' | 'Awaiting Approval' | 'Claimed' | 'Under verification' | 'Pending Valuation' | 'Ready for Claim' | 'Settled';
 
 export interface ProofInfo {
   fullName: string;

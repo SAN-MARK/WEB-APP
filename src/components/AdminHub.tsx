@@ -163,14 +163,21 @@ export const AdminHub: React.FC<AdminHubProps> = ({
         // Trigger live notification and local backup
         const item = liveFoundItems[index];
         const userId = item?.FinderEmail || item?.FinderPhone || 'all';
-        const message = `Platform update: Item "${item?.ItemCategory || 'Found Item'}" is now marked as "${newStatus}".`;
+        let message = `Platform update: Item "${item?.ItemCategory || 'Found Item'}" is now marked as "${newStatus}".`;
+        let notifItemId = item?.submissionId || '';
+
+        if (newStatus === 'Ready for Claim' || newStatus === 'Verified') {
+          const rewardAmount = item?.RewardAmount || 60;
+          message = `Reward Released!|Admin has verified your item ${item?.ItemCategory || 'Found Item'}. Reward of ₹${rewardAmount} is now available.`;
+          notifItemId = 'rewards';
+        }
         
         const notif = {
           UserID: userId,
           Message: message,
           Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
           ReadStatus: 'false',
-          ItemID: item?.submissionId || ''
+          ItemID: notifItemId
         };
         apiRouter.appendNotification(notif).catch(e => console.error('[API Notification] Error appending row:', e));
 
@@ -224,14 +231,14 @@ export const AdminHub: React.FC<AdminHubProps> = ({
 
         // Trigger notification and local backup
         const userId = item?.FinderEmail || item?.FinderPhone || 'all';
-        const message = `Item Verified! Platform service fee of ₹${calculatedFee} is now active for this claim.`;
+        const message = `Reward Released!|Admin has verified your item ${item?.ItemCategory || 'Found Item'}. Reward of ₹${enteredVal} is now available.`;
         
         const notif = {
           UserID: userId,
           Message: message,
           Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
           ReadStatus: 'false',
-          ItemID: item?.id || ''
+          ItemID: 'rewards'
         };
         apiRouter.appendNotification(notif).catch(e => console.error('[API Notification] Error appending row:', e));
 
@@ -796,9 +803,11 @@ export const AdminHub: React.FC<AdminHubProps> = ({
                       >
                         <option value="Pending Valuation">Pending Valuation</option>
                         <option value="Ready for Claim">Ready for Claim</option>
+                        <option value="Verified">Verified</option>
                         <option value="Under Review">Under Review</option>
                         <option value="Match Found">Match Found</option>
                         <option value="Claimed">Claimed</option>
+                        <option value="Settled">Settled</option>
                         <option value="Available">Available</option>
                       </select>
                     </div>

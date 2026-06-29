@@ -530,37 +530,57 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </h4>
 
             <div className="space-y-3">
-              {/* Simulated Recent 1 */}
-              <div className="bg-slate-50 rounded-xl border border-slate-150 p-3.5 flex items-center justify-between shadow-xs">
-                <div className="flex gap-3 items-center">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
-                    <img src="https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Keys" />
-                  </div>
-                  <div>
-                    <h5 className="font-black text-xs text-slate-800 uppercase">Silver Key Set</h5>
-                    <p className="text-[9px] font-mono text-slate-400 mt-0.5">T. Nagar Metro</p>
-                  </div>
-                </div>
-                <span className="text-[8px] font-black text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200 uppercase tracking-wider">
-                  Verifying
-                </span>
-              </div>
+              {(() => {
+                const userEmailLower = (user.email || '').trim().toLowerCase();
+                const userItems = items.filter(item => {
+                  const finderEmail = (item.reporterEmail || '').trim().toLowerCase();
+                  return finderEmail === userEmailLower && item.status !== 'Settled';
+                });
 
-              {/* Simulated Recent 2 */}
-              <div className="bg-slate-50 rounded-xl border border-slate-150 p-3.5 flex items-center justify-between shadow-xs">
-                <div className="flex gap-3 items-center">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
-                    <img src="https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&q=80&w=400" className="w-full h-full object-cover" alt="Wallet" />
-                  </div>
-                  <div>
-                    <h5 className="font-black text-xs text-slate-800 uppercase">Leather Wallet</h5>
-                    <p className="text-[9px] font-mono text-slate-400 mt-0.5">Adyar Hub</p>
-                  </div>
-                </div>
-                <span className="text-[8px] font-black text-green-700 bg-green-50 px-2 py-1 rounded-md border border-green-200 uppercase tracking-wider">
-                  Ready Pickup
-                </span>
-              </div>
+                if (userItems.length === 0) {
+                  return (
+                    <div className="text-center py-6">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">No active dispatches</p>
+                      <p className="text-[9px] text-slate-500 mt-1 uppercase font-semibold">Your reporter ledger is empty.</p>
+                    </div>
+                  );
+                }
+
+                return userItems.map((item) => {
+                  let badgeColor = "text-amber-700 bg-amber-50 border-amber-200";
+                  if (item.status === 'Ready for Claim' || item.status === 'Claimed') {
+                    badgeColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
+                  } else if (item.status === 'Under verification') {
+                    badgeColor = "text-blue-700 bg-blue-50 border-blue-200";
+                  } else if (item.status === 'Pending Valuation') {
+                    badgeColor = "text-purple-700 bg-purple-50 border-purple-200";
+                  }
+
+                  return (
+                    <div key={item.id} className="bg-slate-50 rounded-xl border border-slate-150 p-3 flex items-center justify-between shadow-xs">
+                      <div className="flex gap-3 items-center min-w-0">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center">
+                          <img 
+                            src={item.clearImg || 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?w=100&auto=format&fit=crop&q=60'} 
+                            className="w-full h-full object-cover" 
+                            alt={item.name} 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?w=100&auto=format&fit=crop&q=60';
+                            }}
+                          />
+                        </div>
+                        <div className="min-w-0 text-left">
+                          <h5 className="font-black text-xs text-slate-800 uppercase truncate">{item.name || `${item.category} Found`}</h5>
+                          <p className="text-[9px] font-mono text-slate-400 mt-0.5 truncate">{item.location}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[8px] font-black px-2 py-1 rounded-md border uppercase tracking-wider shrink-0 ${badgeColor}`}>
+                        {item.status}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
 
