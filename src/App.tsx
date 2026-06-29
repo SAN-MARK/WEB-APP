@@ -23,7 +23,11 @@ import {
   TrendingUp,
   UserCircle,
   Settings,
-  User
+  User,
+  Menu,
+  X,
+  Award,
+  LogOut
 } from 'lucide-react';
 
 function AvatarImage({ user, className }: { user: UserProfile; className: string }) {
@@ -153,6 +157,7 @@ export default function App() {
   });
 
   const [autoClaimItemId, setAutoClaimItemId] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Show dynamic banner notifications
   const showBanner = (msg: string) => {
@@ -415,6 +420,22 @@ export default function App() {
     showBanner(`🎉 UPI settlement complete! Finder received ₹${reward} micro-reward.`);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('findback_user');
+    localStorage.removeItem('findback_isAdminLoggedIn');
+    setIsAdminLoggedIn(false);
+    setUser({
+      name: 'Sanjeev Kumar',
+      email: 'iamheresanjeev@gmail.com',
+      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAT1fC-30ox59euXgQKm-BDmqTSUP4em7OCuo2ucolhgUXj8-Qk_GrbXbXWUvh1YIy6SJnrodb_biiQfDUfzx4MrheXBoiONSaH62QImMlFnVeRAVxwojptdqtPy9tPfUDKz0MLXR1bYK08eXCJmIFmhA4FpS8425FH4HEeFty-nuVAj1C-8zfD0IsHmNOKvmoqgIw2TXW95w9wU9gQiV0CzKDav8qVVoS0l6a2L7HLwnhP6xGSvfUT7ixs5BJQD9EEinA49bhz9-n7',
+      balance: 120,
+      reportedCount: 2,
+      claimedCount: 1
+    });
+    setCurrentScreen('welcome');
+    showBanner('Logged out successfully.');
+  };
+
   // Quick reset to clear demo state
   const handleResetDemo = () => {
     localStorage.removeItem('findback_items');
@@ -501,7 +522,7 @@ export default function App() {
                     }`}
                   >
                     <Home className={`w-4 h-4 ${currentScreen === 'home' ? 'text-white' : 'text-slate-400'}`} />
-                    <span>Home Dashboard</span>
+                    <span>Dashboard</span>
                   </button>
 
                   <button
@@ -536,7 +557,7 @@ export default function App() {
                         : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                     }`}
                   >
-                    <Star className={`w-4 h-4 ${currentScreen === 'rewards' ? 'text-white' : 'text-slate-400'}`} />
+                    <Award className={`w-4 h-4 ${currentScreen === 'rewards' ? 'text-white' : 'text-slate-400'}`} />
                     <span>My Rewards</span>
                   </button>
 
@@ -550,6 +571,27 @@ export default function App() {
                   >
                     <Settings className={`w-4 h-4 ${currentScreen === 'settings' ? 'text-white' : 'text-slate-400'}`} />
                     <span>Account Settings</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsNotificationDrawerOpen(true)}
+                    className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/50 relative"
+                  >
+                    <Bell className="w-4 h-4 text-slate-400" />
+                    <span>Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="absolute right-4 bg-red-500 text-white text-[9px] font-black font-mono rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center animate-pulse">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20"
+                  >
+                    <LogOut className="w-4 h-4 text-red-400" />
+                    <span>Logout</span>
                   </button>
 
                   {isAdminLoggedIn && activeRole === 'admin' && (
@@ -855,6 +897,13 @@ export default function App() {
           {currentScreen !== 'welcome' && (
             <header className="sticky top-0 w-full z-40 bg-blue-900 text-white flex justify-between items-center px-4 py-3 border-b-4 border-amber-400 shrink-0 shadow-md select-none">
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="p-1 -ml-1 text-white hover:bg-blue-800 rounded cursor-pointer transition-colors"
+                  title="Menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
                 <div className="w-7 h-7 rounded bg-gradient-to-b from-blue-950 to-blue-900 flex items-center justify-center border border-slate-700 relative overflow-hidden">
                   <RefreshCw className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
                 </div>
@@ -1019,7 +1068,7 @@ export default function App() {
             <div>UPTIME: 99.98%</div>
           </footer>
 
-          {/* Sticky Bottom Navigation Bar (Visual 2) */}
+          {/* Sticky Bottom Navigation Bar */}
           {currentScreen !== 'welcome' && (
             <nav className="absolute bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 bg-white border-t border-slate-200 z-50 shadow-xl shrink-0 select-none">
               <button
@@ -1059,29 +1108,228 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setCurrentScreen('rewards')}
+                onClick={() => setIsMobileMenuOpen(true)}
                 className={`flex flex-col items-center justify-center p-1.5 px-3 transition-all text-center rounded cursor-pointer ${
-                  currentScreen === 'rewards'
+                  isMobileMenuOpen
                     ? 'text-blue-900 font-bold border-b-2 border-blue-900'
                     : 'text-slate-500 hover:text-blue-900'
                 }`}
               >
-                <Star className={`w-4.5 h-4.5 ${currentScreen === 'rewards' ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
-                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Rewards</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentScreen('settings')}
-                className={`flex flex-col items-center justify-center p-1.5 px-3 transition-all text-center rounded cursor-pointer ${
-                  currentScreen === 'settings'
-                    ? 'text-blue-900 font-bold border-b-2 border-blue-900'
-                    : 'text-slate-500 hover:text-blue-900'
-                }`}
-              >
-                <Settings className={`w-4.5 h-4.5 ${currentScreen === 'settings' ? 'text-blue-900' : 'text-slate-500'}`} />
-                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Settings</span>
+                <User className={`w-4.5 h-4.5 ${isMobileMenuOpen ? 'text-blue-900 fill-blue-900' : 'text-slate-500'}`} />
+                <span className="text-[8px] font-bold mt-0.5 font-display uppercase tracking-wider">Profile</span>
               </button>
             </nav>
+          )}
+
+          {/* Full-Screen Mobile Menu Drawer Overlay */}
+          {isMobileMenuOpen && (
+            <div className="absolute inset-0 bg-slate-950 text-white z-50 flex flex-col p-6 overflow-y-auto animate-fade-in text-left">
+              {/* Drawer Header */}
+              <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded bg-gradient-to-b from-blue-950 to-blue-900 flex items-center justify-center border border-slate-700">
+                    <RefreshCw className="w-4 h-4 text-cyan-400 animate-pulse" />
+                  </div>
+                  <div>
+                    <span className="font-display font-black text-lg text-white tracking-tighter uppercase block">FindBack</span>
+                    <span className="text-[8px] font-mono font-bold tracking-widest text-cyan-400 block uppercase">Mobile Menu</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-1.5 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* User Portrait & Details */}
+              <div className="my-6 p-4 bg-slate-900/60 rounded-2xl border border-slate-800/80 flex flex-col items-center text-center space-y-3">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-amber-400 relative shadow-lg flex items-center justify-center">
+                    <AvatarImage user={user} className="w-full h-full text-lg" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-3.5 h-3.5 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-black tracking-wide text-white uppercase">{user.name}</h4>
+                  <p className="text-[10px] text-cyan-300 font-mono font-medium truncate max-w-[200px]">{user.email}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 w-full pt-1.5 border-t border-slate-800">
+                  <div className="bg-slate-950/50 p-2 rounded-xl text-center">
+                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Reported</p>
+                    <p className="text-xs font-black text-white font-mono mt-0.5">{user.reportedCount}</p>
+                  </div>
+                  <div className="bg-slate-950/50 p-2 rounded-xl text-center">
+                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Rewards</p>
+                    <p className="text-xs font-black text-amber-400 font-mono mt-0.5">₹{user.balance}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Options List */}
+              <nav className="flex-grow space-y-1">
+                <p className="text-[9px] font-black tracking-widest text-slate-500 uppercase px-3 mb-2">Menu Options</p>
+                
+                <button
+                  onClick={() => {
+                    setCurrentScreen('home');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                    currentScreen === 'home'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCurrentScreen('search');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                    currentScreen === 'search'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Search Ledger</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCurrentScreen('report');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                    currentScreen === 'report'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Report Lost Tag</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCurrentScreen('rewards');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                    currentScreen === 'rewards'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  <Award className="w-4 h-4" />
+                  <span>My Rewards</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCurrentScreen('settings');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                    currentScreen === 'settings'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Account Settings</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsNotificationDrawerOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer text-slate-400 hover:text-white hover:bg-slate-900"
+                >
+                  <Bell className="w-4 h-4" />
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-[9px] font-black font-mono rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+
+                {isAdminLoggedIn && activeRole === 'admin' && (
+                  <button
+                    onClick={() => {
+                      setCurrentScreen('admin');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all text-left cursor-pointer ${
+                      currentScreen === 'admin'
+                        ? 'bg-blue-600 text-white shadow'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    }`}
+                  >
+                    <Sliders className="w-4 h-4" />
+                    <span>Hub Operator Console</span>
+                  </button>
+                )}
+              </nav>
+
+              {/* PERSPECTIVE SIMULATOR (Sticky Toggle inside Hamburger drawer) */}
+              <div className="pt-4 border-t border-slate-800 mt-6 shrink-0">
+                <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5 mb-2">
+                  <Sliders className="w-3.5 h-3.5" />
+                  PERSPECTIVE SIMULATOR
+                </span>
+                <div className="grid grid-cols-2 gap-1 bg-slate-900 rounded p-1 border border-slate-800">
+                  <button
+                    onClick={() => {
+                      setActiveRole('owner');
+                      setCurrentScreen('home');
+                      setIsMobileMenuOpen(false);
+                      showBanner("Switched view to OWNER workflow.");
+                    }}
+                    className={`py-1.5 rounded text-[10px] uppercase font-black tracking-wider transition-all cursor-pointer ${
+                      activeRole === 'owner' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Owner
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveRole('finder');
+                      setCurrentScreen('report');
+                      setIsMobileMenuOpen(false);
+                      showBanner("Switched view to FINDER workflow.");
+                    }}
+                    className={`py-1.5 rounded text-[10px] uppercase font-black tracking-wider transition-all cursor-pointer ${
+                      activeRole === 'finder' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Finder
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           <NotificationDrawer
