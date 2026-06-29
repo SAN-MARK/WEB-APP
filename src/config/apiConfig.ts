@@ -1,9 +1,9 @@
 /**
  * Centralized API Configuration for FindBack
- * Ensure the Google Sheet associated with 93812d90-9938-4f16-acd9-09b79ed50388 is shared with 'Anyone with the link' and has 'Editor' permissions.
+ * Ensure the Google Sheet associated with bb1c5bee-d4cd-4dff-8b3f-d204c06f8526 is shared with 'Anyone with the link' and has 'Editor' permissions.
  */
 
-export const CONNECTION_URL = 'https://api.sheetbest.com/sheets/93812d90-9938-4f16-acd9-09b79ed50388';
+export const CONNECTION_URL = 'https://api.sheetbest.com/sheets/bb1c5bee-d4cd-4dff-8b3f-d204c06f8526';
 
 export const API_ENDPOINTS = {
   USERS: `${CONNECTION_URL}/tabs/Users`,
@@ -21,9 +21,12 @@ export interface BaseFetchOptions extends Omit<RequestInit, 'body'> {
  * stringifies bodies for write requests, and includes robust error logging.
  */
 export async function baseFetch(url: string, options: BaseFetchOptions = {}): Promise<Response> {
+  // Console log to verify the URL being fetched matches the new endpoint
+  console.log(`[API Helper Verification] Fetching URL: ${url} (Expecting base: ${CONNECTION_URL})`);
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Api-Key': '[https://api.sheetbest.com/sheets/93812d90-9938-4f16-acd9-09b79ed50388]',
+    'X-Api-Key': '[https://api.sheetbest.com/sheets/bb1c5bee-d4cd-4dff-8b3f-d204c06f8526]',
     ...(options.headers as Record<string, string> || {}),
   };
 
@@ -40,6 +43,9 @@ export async function baseFetch(url: string, options: BaseFetchOptions = {}): Pr
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
       console.log(`[API Error Log] Fetch failed for ${url}. Status code: ${response.status}`, response);
+      if (response.status === 401 || response.status === 403) {
+        console.error(`[API Permission Warning] Received ${response.status} from SheetBest. Please verify that the new API Key from the SheetBest dashboard for this specific endpoint (bb1c5bee-d4cd-4dff-8b3f-d204c06f8526) is being passed in the 'X-Api-Key' header.`);
+      }
     }
     return response;
   } catch (error) {
