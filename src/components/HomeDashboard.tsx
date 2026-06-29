@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRouter, LiveIdentityVerification } from '../services/apiRouter';
 import { dbService } from '../services/dbService';
+import { baseFetch, API_ENDPOINTS } from '../config/apiConfig';
 import { UserProfile, FoundItem } from '../types';
 import { NotificationController } from './NotificationController';
 import { SearchDashboard } from './SearchDashboard';
@@ -207,10 +208,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
       if (userVerificationRowIndex >= 0) {
         // Row exists, patch the whole row or update it
-        await fetch(`https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822/${userVerificationRowIndex}`, {
+        await baseFetch(`${API_ENDPOINTS.IDENTITY_VERIFICATION}/${userVerificationRowIndex}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: payload
         });
       } else {
         // Row doesn't exist, create it

@@ -1,6 +1,4 @@
-const FOUND_ITEMS_API = "https://api.sheetbest.com/sheets/81694254-e251-4c0b-8e36-245d7f2affab";
-const IDENTITY_VERIFICATION_API = "https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822";
-const NOTIFICATIONS_API = "https://api.sheetbest.com/sheets/81694254-e251-4c0b-8e36-245d7f2affab/tabs/Notifications";
+import { baseFetch, API_ENDPOINTS } from '../config/apiConfig';
 
 export interface LiveIdentityVerification {
   Timestamp?: string;
@@ -47,14 +45,16 @@ export const apiRouter = {
   // Fetch all found items
   async fetchFoundItems(): Promise<LiveFoundItem[]> {
     try {
-      const response = await fetch(FOUND_ITEMS_API);
+      const response = await baseFetch(API_ENDPOINTS.FOUND_ITEMS);
       if (response.ok) {
         const data = await response.json();
         return Array.isArray(data) ? data : [];
+      } else {
+        console.warn(`[apiRouter Debug] fetchFoundItems failed. Status: ${response.status}. Response:`, response);
+        return [];
       }
-      return [];
     } catch (error) {
-      console.error('Failed to fetch found items:', error);
+      console.error('[apiRouter Error] fetchFoundItems exception:', error);
       return [];
     }
   },
@@ -62,19 +62,16 @@ export const apiRouter = {
   // Update status of a found item row by index
   async updateFoundItemStatus(index: number, status: string): Promise<boolean> {
     try {
-      const response = await fetch(`${FOUND_ITEMS_API}/${index}`, {
+      const response = await baseFetch(`${API_ENDPOINTS.FOUND_ITEMS}/${index}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ Status: status }),
+        body: { Status: status },
       });
       if (!response.ok) {
-        console.warn(`[API Permission Debug] Failed updateFoundItemStatus. Status: ${response.status}. Verify Sheet Best API write permissions.`);
+        console.warn(`[apiRouter Debug] updateFoundItemStatus failed. Status: ${response.status}. Response:`, response);
       }
       return response.ok;
     } catch (error) {
-      console.error('[API Permission Debug] Network or permission error in updateFoundItemStatus:', error);
+      console.error('[apiRouter Error] updateFoundItemStatus exception:', error);
       return false;
     }
   },
@@ -82,19 +79,16 @@ export const apiRouter = {
   // Update multiple fields of a found item row by index (valuation/status sync)
   async updateFoundItemFields(index: number, fields: Record<string, any>): Promise<boolean> {
     try {
-      const response = await fetch(`${FOUND_ITEMS_API}/${index}`, {
+      const response = await baseFetch(`${API_ENDPOINTS.FOUND_ITEMS}/${index}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(fields),
+        body: fields,
       });
       if (!response.ok) {
-        console.warn(`[API Permission Debug] Failed updateFoundItemFields. Status: ${response.status}. Verify Sheet Best API write permissions.`);
+        console.warn(`[apiRouter Debug] updateFoundItemFields failed. Status: ${response.status}. Response:`, response);
       }
       return response.ok;
     } catch (error) {
-      console.error('[API Permission Debug] Network or permission error in updateFoundItemFields:', error);
+      console.error('[apiRouter Error] updateFoundItemFields exception:', error);
       return false;
     }
   },
@@ -102,16 +96,16 @@ export const apiRouter = {
   // Fetch all identity verifications
   async fetchIdentityVerifications(): Promise<LiveIdentityVerification[]> {
     try {
-      const response = await fetch(IDENTITY_VERIFICATION_API);
+      const response = await baseFetch(API_ENDPOINTS.IDENTITY_VERIFICATION);
       if (response.ok) {
         const data = await response.json();
         return Array.isArray(data) ? data : [];
       } else {
-        console.warn(`[API Permission Debug] Failed to fetch identity verifications. Status: ${response.status}. Verify read permissions.`);
+        console.warn(`[apiRouter Debug] fetchIdentityVerifications failed. Status: ${response.status}. Response:`, response);
+        return [];
       }
-      return [];
     } catch (error) {
-      console.error('[API Permission Debug] Network or permission error in fetchIdentityVerifications:', error);
+      console.error('[apiRouter Error] fetchIdentityVerifications exception:', error);
       return [];
     }
   },
@@ -119,19 +113,16 @@ export const apiRouter = {
   // Update verification status of identity row by index
   async updateIdentityVerificationStatus(index: number, status: string): Promise<boolean> {
     try {
-      const response = await fetch(`${IDENTITY_VERIFICATION_API}/${index}`, {
+      const response = await baseFetch(`${API_ENDPOINTS.IDENTITY_VERIFICATION}/${index}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ VerificationStatus: status }),
+        body: { VerificationStatus: status },
       });
       if (!response.ok) {
-        console.warn(`[API Permission Debug] Failed to update identity verification status. Status: ${response.status}. Verify write permissions.`);
+        console.warn(`[apiRouter Debug] updateIdentityVerificationStatus failed. Status: ${response.status}. Response:`, response);
       }
       return response.ok;
     } catch (error) {
-      console.error('[API Permission Debug] Network or permission error in updateIdentityVerificationStatus:', error);
+      console.error('[apiRouter Error] updateIdentityVerificationStatus exception:', error);
       return false;
     }
   },
@@ -139,16 +130,16 @@ export const apiRouter = {
   // Fetch all notifications from the live sheet
   async fetchNotifications(): Promise<LiveNotification[]> {
     try {
-      const response = await fetch(NOTIFICATIONS_API);
+      const response = await baseFetch(API_ENDPOINTS.NOTIFICATIONS);
       if (response.ok) {
         const data = await response.json();
         return Array.isArray(data) ? data : [];
       } else {
-        console.warn(`[API Permission Debug] Failed to fetch notifications. Status: ${response.status}. Verify read permissions or if tab exists.`);
+        console.warn(`[apiRouter Debug] fetchNotifications failed. Status: ${response.status}. Response:`, response);
+        return [];
       }
-      return [];
     } catch (error) {
-      console.error('[API Permission Debug] Network or permission error in fetchNotifications:', error);
+      console.error('[apiRouter Error] fetchNotifications exception:', error);
       return [];
     }
   },
@@ -156,19 +147,16 @@ export const apiRouter = {
   // Append a notification row to the sheet
   async appendNotification(notification: LiveNotification): Promise<boolean> {
     try {
-      const response = await fetch(NOTIFICATIONS_API, {
+      const response = await baseFetch(API_ENDPOINTS.NOTIFICATIONS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(notification),
+        body: notification,
       });
       if (!response.ok) {
-        console.warn(`[API Permission Debug] Failed to append notification. Status: ${response.status}. Verify write permissions.`);
+        console.warn(`[apiRouter Debug] appendNotification failed. Status: ${response.status}. Response:`, response);
       }
       return response.ok;
     } catch (error) {
-      console.error('[API Permission Debug] Network or permission error in appendNotification:', error);
+      console.error('[apiRouter Error] appendNotification exception:', error);
       return false;
     }
   },
@@ -176,19 +164,16 @@ export const apiRouter = {
   // Update a notification's ReadStatus to true by index
   async markNotificationAsRead(index: number): Promise<boolean> {
     try {
-      const response = await fetch(`${NOTIFICATIONS_API}/${index}`, {
+      const response = await baseFetch(`${API_ENDPOINTS.NOTIFICATIONS}/${index}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ReadStatus: true }),
+        body: { ReadStatus: true },
       });
       if (!response.ok) {
-        console.warn(`[API Permission Debug] Failed to mark notification as read. Status: ${response.status}. Verify write permissions.`);
+        console.warn(`[apiRouter Debug] markNotificationAsRead failed. Status: ${response.status}. Response:`, response);
       }
       return response.ok;
     } catch (error) {
-      console.error('[API Permission Debug] Network or permission error in markNotificationAsRead:', error);
+      console.error('[apiRouter Error] markNotificationAsRead exception:', error);
       return false;
     }
   }

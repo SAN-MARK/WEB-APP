@@ -1,11 +1,29 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { getFirestore, doc, setDoc, collection, query, where, getDocs, updateDoc, getDocFromServer } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth();
+export const auth = getAuth(app);
+export const storage = getStorage(app);
+
+export {
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  doc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  getStorage,
+};
 
 export enum OperationType {
   CREATE = 'create',
@@ -69,4 +87,3 @@ async function testConnection() {
 }
 
 testConnection();
-

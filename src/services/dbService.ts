@@ -1,12 +1,9 @@
 /**
  * Unified Database Service for Sheet.best API Integration
- * Endpoint: https://api.sheetbest.com/sheets/93812d90-9938-4f16-acd9-09b79ed50388
+ * Centralized to Endpoint: https://api.sheetbest.com/sheets/93812d90-9938-4f16-acd9-09b79ed50388
  */
 
-const BASE_URL = 'https://api.sheetbest.com/sheets/93812d90-9938-4f16-acd9-09b79ed50388';
-
-const FOUND_ITEMS_URL = 'https://api.sheetbest.com/sheets/81694254-e251-4c0b-8e36-245d7f2affab';
-const IDENTITY_VERIFICATION_URL = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
+import { baseFetch, API_ENDPOINTS, CONNECTION_URL } from '../config/apiConfig';
 
 export interface UserLoginPayload {
   Timestamp: string;
@@ -64,32 +61,25 @@ export const dbService = {
   async recordUserLogin(payload: UserLoginPayload): Promise<boolean> {
     try {
       console.log('Sending user login record to Sheet.best Users tab:', payload);
-      const response = await fetch(`${BASE_URL}/tabs/Users`, {
+      const response = await baseFetch(API_ENDPOINTS.USERS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       if (response.ok) {
         console.log('Successfully recorded user login!');
         return true;
       } else {
-        console.warn('Sheet.best response not OK, attempting fallback directly to main endpoint...', response.status);
+        console.warn(`[dbService Debug] recordUserLogin response not OK. Status: ${response.status}. Trying fallback...`, response);
         // Fallback to main sheet just in case tabs are not configured
-        const fallbackRes = await fetch(BASE_URL, {
+        const fallbackRes = await baseFetch(CONNECTION_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...payload, _sheet: 'Users' }),
+          body: { ...payload, _sheet: 'Users' },
         });
         return fallbackRes.ok;
       }
     } catch (error) {
-      console.error('Failed to submit user login to Sheet.best:', error);
-      // We will return false to proceed gracefully in case of offline/network blockages
+      console.error('[dbService Error] recordUserLogin failed:', error);
       return false;
     }
   },
@@ -100,30 +90,24 @@ export const dbService = {
   async recordFileSubmission(payload: FileSubmissionPayload): Promise<boolean> {
     try {
       console.log('Sending file submission to Sheet.best:', payload);
-      const response = await fetch(`${BASE_URL}/tabs/Submissions`, {
+      const response = await baseFetch(`${CONNECTION_URL}/tabs/Submissions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       if (response.ok) {
         console.log('Successfully recorded file submission!');
         return true;
       } else {
-        console.warn('Sheet.best response not OK, attempting fallback directly to main endpoint...', response.status);
-        const fallbackRes = await fetch(BASE_URL, {
+        console.warn(`[dbService Debug] recordFileSubmission response not OK. Status: ${response.status}. Trying fallback...`, response);
+        const fallbackRes = await baseFetch(CONNECTION_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...payload, _sheet: 'Submissions' }),
+          body: { ...payload, _sheet: 'Submissions' },
         });
         return fallbackRes.ok;
       }
     } catch (error) {
-      console.error('Failed to submit file record to Sheet.best:', error);
+      console.error('[dbService Error] recordFileSubmission failed:', error);
       return false;
     }
   },
@@ -133,24 +117,21 @@ export const dbService = {
    */
   async submitFoundItem(payload: FoundItemSubmissionPayload): Promise<boolean> {
     try {
-      console.log('Submitting found item report directly to live Sheet.best endpoint:', payload);
-      const response = await fetch(FOUND_ITEMS_URL, {
+      console.log('Submitting found item report to centralized Sheet.best tab:', payload);
+      const response = await baseFetch(API_ENDPOINTS.FOUND_ITEMS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       if (response.ok) {
-        console.log('Successfully logged found item report on live Sheet.best endpoint!');
+        console.log('Successfully logged found item report on centralized Sheet.best tab!');
         return true;
       } else {
-        console.warn('Found item endpoint responded with non-OK status:', response.status);
+        console.warn(`[dbService Debug] submitFoundItem failed. Status: ${response.status}. Response:`, response);
         return false;
       }
     } catch (error) {
-      console.error('Failed to communicate with live Found Items Sheet.best endpoint:', error);
+      console.error('[dbService Error] submitFoundItem failed:', error);
       return false;
     }
   },
@@ -160,24 +141,21 @@ export const dbService = {
    */
   async submitIdentityVerification(payload: IdentityVerificationPayload): Promise<boolean> {
     try {
-      console.log('Submitting identity verification directly to live Sheet.best endpoint:', payload);
-      const response = await fetch(IDENTITY_VERIFICATION_URL, {
+      console.log('Submitting identity verification to centralized Sheet.best tab:', payload);
+      const response = await baseFetch(API_ENDPOINTS.IDENTITY_VERIFICATION, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       if (response.ok) {
-        console.log('Successfully logged identity verification on live Sheet.best endpoint!');
+        console.log('Successfully logged identity verification on centralized Sheet.best tab!');
         return true;
       } else {
-        console.warn('Identity verification endpoint responded with non-OK status:', response.status);
+        console.warn(`[dbService Debug] submitIdentityVerification failed. Status: ${response.status}. Response:`, response);
         return false;
       }
     } catch (error) {
-      console.error('Failed to communicate with live Identity Verification Sheet.best endpoint:', error);
+      console.error('[dbService Error] submitIdentityVerification failed:', error);
       return false;
     }
   },
@@ -187,14 +165,16 @@ export const dbService = {
    */
   async fetchFoundItems(): Promise<any[]> {
     try {
-      const response = await fetch(FOUND_ITEMS_URL);
+      const response = await baseFetch(API_ENDPOINTS.FOUND_ITEMS);
       if (response.ok) {
         const data = await response.json();
         return Array.isArray(data) ? data : [];
+      } else {
+        console.warn(`[dbService Debug] fetchFoundItems failed. Status: ${response.status}. Response:`, response);
+        return [];
       }
-      return [];
     } catch (error) {
-      console.error('Failed to fetch found items:', error);
+      console.error('[dbService Error] fetchFoundItems failed:', error);
       return [];
     }
   },
@@ -205,16 +185,16 @@ export const dbService = {
   async updateFoundItemStatus(index: number, status: string): Promise<boolean> {
     try {
       console.log(`Updating status of found item at index ${index} to ${status}`);
-      const response = await fetch(`${FOUND_ITEMS_URL}/${index}`, {
+      const response = await baseFetch(`${API_ENDPOINTS.FOUND_ITEMS}/${index}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ Status: status }),
+        body: { Status: status },
       });
+      if (!response.ok) {
+        console.warn(`[dbService Debug] updateFoundItemStatus failed. Status: ${response.status}. Response:`, response);
+      }
       return response.ok;
     } catch (error) {
-      console.error('Failed to update found item status:', error);
+      console.error('[dbService Error] updateFoundItemStatus failed:', error);
       return false;
     }
   },
@@ -224,14 +204,16 @@ export const dbService = {
    */
   async fetchIdentityVerifications(): Promise<any[]> {
     try {
-      const response = await fetch(IDENTITY_VERIFICATION_URL);
+      const response = await baseFetch(API_ENDPOINTS.IDENTITY_VERIFICATION);
       if (response.ok) {
         const data = await response.json();
         return Array.isArray(data) ? data : [];
+      } else {
+        console.warn(`[dbService Debug] fetchIdentityVerifications failed. Status: ${response.status}. Response:`, response);
+        return [];
       }
-      return [];
     } catch (error) {
-      console.error('Failed to fetch identity verifications:', error);
+      console.error('[dbService Error] fetchIdentityVerifications failed:', error);
       return [];
     }
   },
@@ -242,16 +224,16 @@ export const dbService = {
   async updateIdentityVerificationStatus(index: number, status: string): Promise<boolean> {
     try {
       console.log(`Updating verification status of row at index ${index} to ${status}`);
-      const response = await fetch(`${IDENTITY_VERIFICATION_URL}/${index}`, {
+      const response = await baseFetch(`${API_ENDPOINTS.IDENTITY_VERIFICATION}/${index}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ VerificationStatus: status }),
+        body: { VerificationStatus: status },
       });
+      if (!response.ok) {
+        console.warn(`[dbService Debug] updateIdentityVerificationStatus failed. Status: ${response.status}. Response:`, response);
+      }
       return response.ok;
     } catch (error) {
-      console.error('Failed to update identity status:', error);
+      console.error('[dbService Error] updateIdentityVerificationStatus failed:', error);
       return false;
     }
   },
@@ -273,25 +255,24 @@ export const dbService = {
 
       if (rowIndex !== -1) {
         console.log(`Found item at row index ${rowIndex}. Updating status and OwnerProof...`);
-        const response = await fetch(`${FOUND_ITEMS_URL}/${rowIndex}`, {
+        const response = await baseFetch(`${API_ENDPOINTS.FOUND_ITEMS}/${rowIndex}`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+          body: {
             Status: 'Under Review',
             OwnerProof: proofDetail
-          }),
+          },
         });
+        if (!response.ok) {
+          console.warn(`[dbService Debug] claimItemWithProofBySubmissionId failed. Status: ${response.status}. Response:`, response);
+        }
         return response.ok;
       } else {
         console.warn(`No item found in spreadsheet matching submissionId: ${submissionId}`);
         return false;
       }
     } catch (error) {
-      console.error('Failed to claim item with proof:', error);
+      console.error('[dbService Error] claimItemWithProofBySubmissionId failed:', error);
       return false;
     }
   }
 };
-

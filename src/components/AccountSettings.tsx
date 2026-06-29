@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile } from '../types';
+import { baseFetch, API_ENDPOINTS } from '../config/apiConfig';
 import { 
   UserCircle, 
   Lock, 
@@ -11,9 +12,7 @@ import {
   AlertCircle,
   KeyRound
 } from 'lucide-react';
-import { db } from '../services/firebase';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, collection, query, where, getDocs, doc, updateDoc, getStorage, ref, uploadBytes, getDownloadURL } from '../services/firebase';
 
 interface AccountSettingsProps {
   user: UserProfile;
@@ -92,10 +91,9 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
       // Step B: Fetch from Sheet Best if not found/validated in Firestore
       let sheetBestRowIndex = -1;
       let sheetBestRows: any[] = [];
-      const sheetBestUrl = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
       
       try {
-        const res = await fetch(sheetBestUrl);
+        const res = await baseFetch(API_ENDPOINTS.USERS);
         if (res.ok) {
           sheetBestRows = await res.json();
           if (Array.isArray(sheetBestRows)) {
@@ -146,15 +144,12 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
       // 2. Update Sheet.best if row index is found
       if (sheetBestRowIndex !== -1) {
         try {
-          const patchUrl = `${sheetBestUrl}/${sheetBestRowIndex}`;
-          const patchRes = await fetch(patchUrl, {
+          const patchUrl = `${API_ENDPOINTS.USERS}/${sheetBestRowIndex}`;
+          const patchRes = await baseFetch(patchUrl, {
             method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+            body: {
               Password: newPassword
-            }),
+            },
           });
 
           if (patchRes.ok) {
@@ -218,11 +213,10 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
       }
 
       // Step B: Update Sheet Best row with ProfilePicURL
-      const sheetBestUrl = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
       let sheetBestRowIndex = -1;
 
       try {
-        const res = await fetch(sheetBestUrl);
+        const res = await baseFetch(API_ENDPOINTS.USERS);
         if (res.ok) {
           const rows = await res.json();
           if (Array.isArray(rows)) {
@@ -239,15 +233,12 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
       }
 
       if (sheetBestRowIndex !== -1) {
-        const patchUrl = `${sheetBestUrl}/${sheetBestRowIndex}`;
-        const patchRes = await fetch(patchUrl, {
+        const patchUrl = `${API_ENDPOINTS.USERS}/${sheetBestRowIndex}`;
+        const patchRes = await baseFetch(patchUrl, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+          body: {
             ProfilePicURL: publicImageUrl
-          }),
+          },
         });
 
         if (patchRes.ok) {

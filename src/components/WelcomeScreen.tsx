@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { HelpingHand, Search, Eye, RefreshCw, Loader2, CheckCircle2, User, Mail, Phone, Database, Sliders, Lock, ArrowLeft } from 'lucide-react';
 import { dbService } from '../services/dbService';
-import { auth, db, handleFirestoreError, OperationType } from '../services/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { baseFetch, API_ENDPOINTS } from '../config/apiConfig';
+import { 
+  auth, 
+  db, 
+  handleFirestoreError, 
+  OperationType,
+  RecaptchaVerifier, 
+  signInWithPhoneNumber,
+  doc, 
+  setDoc 
+} from '../services/firebase';
 
 interface WelcomeScreenProps {
   onStartFlow: (role: 'finder' | 'owner') => void;
@@ -213,9 +221,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
       }
 
       // Check for duplicate accounts in Sheet.best before registration
-      const sheetBestUrl = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
       try {
-        const checkRes = await fetch(sheetBestUrl);
+        const checkRes = await baseFetch(API_ENDPOINTS.USERS);
         if (checkRes.ok) {
           const existingRows = await checkRes.json();
           if (Array.isArray(existingRows)) {
@@ -268,12 +275,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
 
       // Automatically send registration data to the specified Sheet Best API endpoint in an array
       try {
-        const response = await fetch(sheetBestUrl, {
+        const response = await baseFetch(API_ENDPOINTS.USERS, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify([
+          body: [
             {
               Timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
               Name: regName,
@@ -281,7 +285,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
               Phone: verifiedPhone,
               Password: regPassword,
             }
-          ]),
+          ],
         });
 
         if (response.ok) {
@@ -358,8 +362,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartFlow, onLog
       // 2. Fetch from Sheet Best Primary Users Ledger if not found in Firestore
       if (!matchedUser) {
         try {
-          const sheetBestUrl = 'https://api.sheetbest.com/sheets/ad425445-e829-4f06-85f7-c93d78761822';
-          const res = await fetch(sheetBestUrl);
+          const res = await baseFetch(API_ENDPOINTS.USERS);
           if (res.ok) {
             const rows = await res.json();
             if (Array.isArray(rows)) {
